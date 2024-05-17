@@ -1,0 +1,24 @@
+/* styles.css */
+@import '../src/assets/styles/variable.css';
+
+body {
+  background-color: var(--background-color); /* Use background color variable */
+  color: var(--text-color); /* Use text color variable */
+}
+
+.error-message {
+  color: red;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+}  
+
+a{
+  text-decoration: none;
+  color: var(--primary-color);
+}
