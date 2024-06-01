@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import template from "./login.jsx";
 import { login_api } from "../../services/userManagementApi.js";
+import { jwtDecode } from 'jwt-decode';
 
 class login extends React.Component {
   constructor(props) {
@@ -28,7 +29,7 @@ class login extends React.Component {
 
   handleFormSubmit = async (event) => {
     event.preventDefault();
-    const { username, password, permissionId } = this.state;
+    const { username, password } = this.state;
 
     // Set loading to true to show loading spinner
     this.setState({ loading: true });
@@ -36,53 +37,47 @@ class login extends React.Component {
     try {
       const formData = {
         username: username,
-        password: password,
-        permissionId: permissionId,
+        password: password
       };
 
       const response = await login_api(formData);
-      if (response.data.result == null) {
-        console.log(response.message);
+
+        if (response.token) {
+          // Decode the JWT to extract user details
+          const decoded = jwtDecode(response.token);
+          console.log("Decoded JWT:", decoded);
+
+          if (decoded.userId && decoded.fullName && decoded.designationId) {
+            sessionStorage.setItem('userId', decoded.userId);
+            sessionStorage.setItem('fullName', decoded.fullName);
+            sessionStorage.setItem('designationId', decoded.designationId);
+
+            this.setState({
+              showSuccessToast: true,
+              successMessageToast: "Login successful!",
+              redirectToMain: true,
+              loading: false,
+            });
+          } else {
+            throw new Error("Necessary user details not found in token");
+          }
+        } else {
+          throw new Error("No token received, authorization failed.");
+        }
+      } catch (error) {
+        let errorMessage = "Error occurred while processing the request.";
+        if (error.response && error.response.status === 401) {
+          errorMessage = "Unauthorized access. Please check your username and password.";
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
         this.setState({
           showErrorToast: true,
-          errorMessageToast: response.message,
-          loading: false, // Reset loading state
-        });
-      } else {
-        this.setState({
-          showSuccessToast: true,
-          successMessageToast: response.message,
+          errorMessageToast: errorMessage,
+          loading: false,
         });
       }
-
-      // Store user information in sessionStorage
-      sessionStorage.setItem("userId", response.data.result.userId.toString());
-      sessionStorage.setItem("username", response.data.result.username);
-      sessionStorage.setItem(
-        "companyId",
-        response.data.result.companyId.toString()
-      );
-      sessionStorage.setItem(
-        "companyName",
-        response.data.result.company.companyName
-      );
-      sessionStorage.setItem(
-        "companyLogoPath",
-        response.data.result.company.logoPath
-      );
-      sessionStorage.setItem("locationId", response.data.result.locationId);
-      // Set redirectToMain to true upon successful login
-      this.setState({ redirectToMain: true });
-
-      console.log("Login successful:", response);
-    } catch (error) {
-      // Handle login error
-      this.setState({
-        error: "Invalid username or password. Please try again.",
-        showErrorToast: true,
-        loading: false, // Reset loading state
-      });
-    }
   };
 
   render() {

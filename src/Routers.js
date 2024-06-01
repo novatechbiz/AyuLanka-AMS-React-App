@@ -1,29 +1,53 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 
-import Home from "./components/home";
 import Login from "./components/login";
-import Main from "./components/main";
-import Admin from "./components/admin";
-import PurchaseRequisition from "./components/purchaseRequisition/purchaseRequisition";
-import PurchaseOrder from "./components/purchaseOrder/purchaseOrder";
-import Grn from "./components/grn/grn";
-import SalesOrder from "./components/salesOrder/salesOrder";
-import SalesInvoice from "./components/salesInvoice/salesInvoice";
-import SalesReceipt from "./components/salesReceipt/salesReceipt";
-import PurchaseRequisitionList from "./components/purchaseRequisition/PurchaseRequisitionList/PurchaseRequisitionList";
-import ItemMaster from "./components/itemMaster/itemMaster";
-import Category from "./components/category/category";
-import Unit from "./components/unit/unit";
-import Supplier from "./components/supplier/supplierMain/supplier";
+import Sidebar from "./components/sideBar/sideBar";
+import User from "./components/user/user";
+import ApplyLeave from "./components/leave/applyLeave";
+import EmployeeRoster from "./components/employeeRoster/employeeRoster";
+import AppointmentScheduler from "./components/appointmentScheduler/appointmentScheduler";
+import UpdateRoster from "./components/updateRoster/updateRoster";
+import ChangeDayOff from "./components/changeDayOff/changeDayOff";
+import ApproveRoster from "./components/approveRoster/approveRoster";
+import ViewRoster from "./components/viewRoster/viewRoster";
+import ApproveDayOff from "./components/approveDayOff/approveDayOff";
+import ChangeShift from "./components/changeShift/changeShift";
+import ApproveShift from "./components/approveShift/approveShift";
+
+const Layout = ({ children }) => {
+  const location = useLocation();
+  const isLoginPage = location.pathname === "/login";
+
+  return (
+    <div className="app-container">
+      {!isLoginPage && <Sidebar />}
+      <div className={`main-content ${isLoginPage ? 'full-width' : ''}`}>
+        {children}
+      </div>
+    </div>
+  );
+};
 
 const Routers = () => {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-      </Routes>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<User />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/apply-leave" element={<ApplyLeave />} />
+          <Route path="/employee-roster" element={<EmployeeRoster />} />
+          <Route path="/appoinment-schedular" element={<AppointmentScheduler />} />
+          <Route path="/update-roster" element={<UpdateRoster />} />
+          <Route path="/approve-roster" element={<ApproveRoster />} />
+          <Route path="/view-roster" element={<ViewRoster />} />
+          <Route path="/change-dayoff" element={<ChangeDayOff />} />
+          <Route path="/approve-dayoff" element={<ApproveDayOff />} />
+          <Route path="/change-shift" element={<ChangeShift />} />
+          <Route path="/approve-shift" element={<ApproveShift />} />
+        </Routes>
+      </Layout>
     </Router>
   );
 };

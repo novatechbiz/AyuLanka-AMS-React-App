@@ -1,0 +1,58 @@
+.shift-change-container {
+    width: 80%;
+    margin: auto;
+    padding-top: 20px;
+}
+
+.shift-change-header {
+    font-size: 24px;
+    color: #16A085; /* Dark slate color */
+    text-align: center;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #BDC3C7; /* Light grey underline */
+}
+
+.shift-change-select {
+    margin-bottom: 15px;
+}
+
+.shift-change-dropdown {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.shift-change-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.shift-change-button:hover {
+    background-color: #45a049;
+}
+
+.shift-change-error {
+    color: red;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.shifts-container {
+    max-height: 400px; /* Set a maximum height for the container */
+    overflow-y: auto; /* Enable vertical scrolling */
+    margin-bottom: 20px; /* Space below the container */
+}
+
+.shift-change-dropdown {
+    width: 100%; /* Ensure dropdown fills the container width */
+    padding: 8px;
+    margin-top: 10px; /* Align with the label */
+}

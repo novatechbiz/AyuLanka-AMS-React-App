@@ -1,0 +1,36 @@
+/* ModalComponent.css */
+
+.modal-icon {
+    font-size: 48px; /* Adjust icon size as needed */
+    text-align: center;
+    margin-bottom: 20px; /* Add margin below the icon */
+}
+
+.modal-icon.success {
+    color: green; /* Set icon color for success */
+}
+
+.modal-icon.error {
+    color: red; /* Set icon color for error */
+}
+
+.modal-message {
+    font-size: 26px; /* Adjust modal body text font size */
+    font-weight: bold; /* Set modal body text to bold */
+}
+
+.modal-title {
+    font-size: 36px !important; /* Adjust modal title font size */
+    font-weight: bold; /* Set modal title to bold */
+}
+
+.modal-button {
+    background-color: green; /* Set button background color */
+    border-color: green; /* Set button border color */
+}
+
+.modal-component-body {
+    text-align: center !important;
+    margin-top: 40px !important;
+    margin-bottom: 40px !important;
+}
