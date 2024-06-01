@@ -1,0 +1,19 @@
+/* notificationComponent.css */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    border-radius: 5px;
+    color: #fff;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+.notification.success {
+    background-color: #28a745; /* Green for success messages */
+}
+
+.notification.error {
+    background-color: #dc3545; /* Red for error messages */
+}

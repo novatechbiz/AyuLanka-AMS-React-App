@@ -22,3 +22,26 @@ a{
   text-decoration: none;
   color: var(--primary-color);
 }
+
+.app-container.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Full height */
+}
+
+.main-content.full-width {
+  width: 100%; /* Full width */
+  padding: 0; /* Remove any padding */
+  margin: 0px !important;
+}
+
+.main-content {
+  width: calc(100% - 200px); /* Adjust based on sidebar width */
+  padding: 20px; /* Add padding if needed */
+}
+
+.sidebar {
+  width: 200px; /* Adjust width if needed */
+}
+

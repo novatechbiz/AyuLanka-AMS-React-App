@@ -1,0 +1,36 @@
+.change-day-off {
+    padding: 20px;
+}
+
+.change-day-off .form-control {
+    width: 100%;
+    margin-bottom: 10px;
+}
+/* 
+.change-day-off .row {
+    margin-bottom: 20px;
+} */
+
+.change-day-off table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.change-day-off th, .change-day-off td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+.change-day-off th {
+    background-color: #f2f2f2;
+    text-align: left;
+}
+
+.dayoff-header{
+    font-size: 24px;
+    color: #16A085; /* Dark slate color */
+    text-align: left;
+    padding: 10px 0;
+    border-bottom: 3px solid #BDC3C7; /* Light grey underline */
+    padding-top: 0px !important;
+}

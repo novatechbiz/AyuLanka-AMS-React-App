@@ -1,8 +1,8 @@
+// src/api.js
 import axios from "axios";
 
-//Import url from config file
+// Import URL from config file
 const baseUrl = process.env.REACT_APP_API_BASEURL;
-const baseUrl2 = process.env.REACT_APP_API_BASEURL2;
 const sublink = process.env.REACT_APP_API_SUBLINK;
 
 export const API_BASE_URL = `${baseUrl}${sublink}`;
@@ -11,12 +11,41 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-//authentication apis
+export const fetchShiftMasters = async () => {
+  
+  try {
+    const response = await api.get("/shiftmaster");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching shift masters:", error);
+    throw error;
+  }
+};
+
+export const fetchEmploymentTypes = async () => {
+  try {
+    const response = await api.get("/employementtype");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching employment types:", error);
+    throw error;
+  }
+};
+
+export const fetchDesignations = async () => {
+  try {
+    const response = await api.get("/designation");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching designations:", error);
+    throw error;
+  }
+};
+
+// Authentication APIs
 export const login_api = async (formData) => {
   try {
-    const response = await api.post("/user/login", formData, {
-      withCredentials: true,
-    });
+    const response = await api.post("/employee/login", formData);
     return response.data;
   } catch (error) {
     console.log(error);
@@ -24,3 +53,34 @@ export const login_api = async (formData) => {
   }
 };
 
+// User APIs
+export const fetchUsers = async () => {
+  try {
+    const response = await api.get("/employee");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    throw error;
+  }
+};
+
+export const createUser = async (user) => {
+  try {
+    const userToCreate = { ...user, id: user.id ?? 0 };
+    const response = await api.post("/employee", userToCreate);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating user:", error);
+    throw error;
+  }
+};
+
+export const updateUser = async (user) => {
+  try {
+    const response = await api.put(`/employee/${user.id}`, user);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating user:", error);
+    throw error;
+  }
+};

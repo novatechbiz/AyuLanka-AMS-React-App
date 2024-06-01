@@ -1,0 +1,116 @@
+.user-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background-color: #f4f4f4;
+  min-height: 100vh;
+}
+
+.user-content {
+  display: grid;
+  grid-template-columns: 1fr 2fr; /* 1:2 width ratio */
+  gap: 20px;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 1200px;
+}
+
+.form-column,
+.table-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-container h1, .user-container h2 {
+  text-align: center;
+  color: #333;
+}
+
+.user-container form {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-container input {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.user-container button {
+  padding: 10px 15px;
+  font-size: 16px;
+  border: none;
+  border-radius: 4px;
+  background-color: #28a745; /* Green color */
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.user-container button:hover {
+  background-color: #218838; /* Darker green on hover */
+}
+
+.user-container table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.user-container th, .user-container td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.user-container th {
+  background-color: #f2f2f2;
+}
+
+.user-container td {
+  background-color: #ffffff; /* Ensuring white background for table cells */
+}
+
+.user-container table tr:hover {
+  background-color: #f1f1f1;
+}
+
+.user-container .actions {
+  text-align: right;
+}
+
+.user-container .table-column {
+  max-height: 400px; /* Set a max-height for the table's container */
+  overflow-y: auto; /* Enable vertical scrolling */
+}
+
+.user-container .table {
+  width: 100%; /* Ensures the table fills the container */
+  margin-bottom: 0; /* Removes the margin at the bottom of the table */
+}
+
+/* CSS for the header when editing or creating an employee */
+.edit-create-header {
+  font-size: 24px;
+  color: #16A085; /* Dark slate color */
+  text-align: left;
+  padding: 10px 0;
+  border-bottom: 3px solid #BDC3C7; /* Light grey underline */
+  padding-top: 0px !important;
+}
+
+/* CSS for the header of the employees table */
+.employees-header {
+  font-size: 24px;
+  color: #16A085; /* Flat UI's green sea color */
+  text-align: left;
+  padding-bottom: 10px;
+  border-bottom: 3px solid #BDC3C7; /* Light grey underline */
+}

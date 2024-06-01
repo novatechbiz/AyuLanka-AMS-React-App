@@ -1,8 +1,7 @@
 .login {
   background-color: var(--background-color);
   color: var(--text-color);
-  padding: 0% 2% 5% 2%;
-  flex: 1; /* Take up 50% of the container */
+  padding: 5% 2%; /* Increase top padding for better alignment */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -11,13 +10,59 @@
   margin: auto;
 }
 
-.container-wraper-login .btn-primary {
-  width: 100% !important;
+button,
+button.btn-primary {
+  padding: 10px 15px;
+  font-size: 16px;
+  border: none;
+  border-radius: 4px;
+  background-color: #28a745; /* Green color */
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  width: 100%; /* Ensure button takes full width */
+}
+
+button:hover,
+button.btn-primary:hover {
+  background-color: #218838; /* Darker green on hover */
+}
+
+.form-group {
+  width: 100%; /* Make form inputs full width */
+  margin-bottom: 1rem; /* Add margin between form inputs */
+}
+
+.form-control {
+  width: 100%; /* Ensure inputs take full width */
+  padding: 10px; /* Add padding for better appearance */
+  border-color: grey; /* Input border grey */
+}
+
+.form-control:focus {
+  border-color: darkgrey; /* Input focus border dark grey */
+  box-shadow: none; /* Remove default focus shadow */
+}
+
+.btn-primary {
+  width: 100%; /* Make button full width */
+  background-color: green; /* Button background green */
+  border-color: green; /* Button border green */
+  padding: 10px; /* Add padding for better appearance */
+}
+
+.btn-primary:hover {
+  background-color: darkgreen; /* Button hover background dark green */
+  border-color: darkgreen; /* Button hover border dark green */
+}
+
+.container-wrapper-login .btn-primary {
+  width: 100%; /* Ensure button takes full width */
 }
 
 .welcome-image {
-  flex: 1; /* Take up 50% of the container */
-  background: url("../../assets/images/login_background.jpg") center/cover;
+  flex: 1;
+  background: url("../../assets/images/bg2.jpg") center/cover;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -51,16 +96,17 @@
   box-shadow: 0;
 }
 
-.container-wraper-login {
+.container-wrapper-login {
   margin: 2% 0;
   display: flex;
+  background-color: #707070; /* Updated to grey-like color */
 }
 
 @media screen and (min-width: 576px) {
   .container-main {
     padding: 0px !important;
-    border: 3px solid transparent; /* Initial transparent border */
-    box-shadow: 0 0 20px 5px rgba(0, 0, 0, 0.2); /* Box shadow with 10px blur and 2px spread */
+    border: 3px solid transparent;
+    box-shadow: 0 0 20px 5px rgba(0, 0, 0, 0.2);
   }
 }
 
@@ -69,7 +115,7 @@
     padding: 0% 5% 5% 2%;
     min-height: 75vh;
   }
-  .container-wraper-login {
+  .container-wrapper-login {
     margin: 0;
     align-items: center;
     justify-content: center;
