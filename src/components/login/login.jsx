@@ -37,7 +37,7 @@ function template() {
               </p>
             </div>
           </div>
-          <div className="col-lg-4">
+          <div className="col-lg-4" style={{backgroundColor: 'white'}}>
             <div className="login text-center">
               <img
                 src={logoImage}

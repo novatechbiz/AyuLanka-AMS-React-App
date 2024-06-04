@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import { fetchEmployees, fetchEmployeeDayOffs, updateDayOff, fetchRosterDates } from '../../services/employeeRoster.js';
+import { fetchEmployees, fetchEmployeeDayOffs, updateDayOff, fetchRosterDates, getPendingDayOffs } from '../../services/employeeRoster.js';
 import './changeDayOff.css';
 import ModalComponent from '../modalComponent/modalComponent.jsx';
-import { FaExchangeAlt } from 'react-icons/fa';
 
 function ChangeDayOff() {
     const [reason, setReason] = useState('');
@@ -19,33 +18,37 @@ function ChangeDayOff() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [selectedRosterId, setSelectedRosterId] = useState('');
-    
+    const [submitAttempted, setSubmitAttempted] = useState(false);
+    const [pendingApprovals, setPendingApprovals] = useState([]);
+    const [successModalOpen, setSuccessModalOpen] = useState(false);
+    const [errorModalOpen, setErrorModalOpen] = useState(false);
 
     useEffect(() => {
         fetchRosterDates()
-        .then(data => {
-            const approvedRosters = data.filter(roster => roster.isApproved);
-            setRosters(approvedRosters);
-        })
-        .catch(setError);
+            .then(data => {
+                const approvedRosters = data.filter(roster => roster.isApproved);
+                setRosters(approvedRosters);
+            })
+            .catch(setError);
 
         fetchEmployees().then(setEmployees).catch(setError);
+        getPendingDayOffs().then(setPendingApprovals).catch(setError); // Fetch pending day off approvals
     }, []);
 
     useEffect(() => {
-        if (selectedEmployee && selectedRosterId) {
+        if (reason && selectedEmployee && selectedRosterId) {
             fetchEmployeeDayOffs(selectedEmployee, selectedRosterId)
-            .then(data => {
-                const activedayOffs = data.filter(shift => shift.isDayOff);
-                const futureDayOffs = filterFutureDayOffs(activedayOffs);
-                const updatedNewDayOffs = futureDayOffs.reduce((acc, dayOff) => {
-                    acc[dayOff.dayOffDate] = new Date(dayOff.dayOffDate); // Initialize with existing dates
-                    return acc;
-                }, {});
-                console.log('day offs: ', futureDayOffs)
-                setDayOffs(futureDayOffs);
-                setNewDayOffs(updatedNewDayOffs);
-            }).catch(setError);
+                .then(data => {
+                    const activedayOffs = data.filter(shift => shift.isDayOff);
+                    const futureDayOffs = filterFutureDayOffs(activedayOffs);
+                    const updatedNewDayOffs = futureDayOffs.reduce((acc, dayOff) => {
+                        acc[dayOff.dayOffDate] = new Date(dayOff.dayOffDate); // Initialize with existing dates
+                        return acc;
+                    }, {});
+                    console.log('day offs: ', futureDayOffs)
+                    setDayOffs(futureDayOffs);
+                    setNewDayOffs(updatedNewDayOffs);
+                }).catch(setError);
         }
 
         if (reason === 'exchange_request' && selectedEmployee2 && selectedRosterId) {
@@ -65,7 +68,7 @@ function ChangeDayOff() {
     const filterFutureDayOffs = (dayOffs) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);  // Normalize today's date to remove the time component for a fair comparison.
-    
+
         return dayOffs.filter(dayOff => {
             const dayOffDate = new Date(dayOff.dayOffDate);
             dayOffDate.setHours(0, 0, 0, 0);  // Normalize dayOff date.
@@ -112,8 +115,14 @@ function ChangeDayOff() {
         const adjustedDate = new Date(date - tzOffset);
         return adjustedDate.toISOString().split('T')[0];
     };
-    
-    const handleSubmit = async () => {
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSubmitAttempted(true); // Set the form as submitted
+        if (!selectedRosterId || !reason || !selectedEmployee) {
+            return;
+        }
+
         setLoading(true);
         try {
             let dayOffChangeDetails = [];
@@ -141,23 +150,24 @@ function ChangeDayOff() {
                     IsApproved: false
                 }));
             }
-            
+
             const dayOffChangeMaster = {
                 StaffRosterMasterId: parseInt(selectedRosterId),
                 EmployeeId: parseInt(selectedEmployee),
                 DayOffChangeReasonId: reason === 'management_request' ? 1 : 2
             };
-    
+
             const dataToSend = {
                 dayOffChangeMaster,
                 dayOffChangeDetails
             };
-    
+
             console.log('Sending Data:', dataToSend);
             await updateDayOff(dataToSend);  // Assuming updateDayOff sends the data to the backend correctly
-            alert('Day off update request submitted successfully!');
+            setSuccessModalOpen(true); // Open success modal
         } catch (error) {
             setError(error.toString());
+            setErrorModalOpen(true); // Open error modal
             console.error('Error submitting day off changes:', error);
         } finally {
             setLoading(false);
@@ -177,122 +187,117 @@ function ChangeDayOff() {
         setDayOffs2([...dayOffs2]);
     };
 
-    if (error) return <div>Error: {error}</div>;
+    const shouldShowError = (field) => {
+        if (field === 'selectedRosterId') return !selectedRosterId && submitAttempted;
+        if (field === 'reason') return !reason && submitAttempted;
+        if (field === 'selectedEmployee') return !selectedEmployee && submitAttempted;
+        return false;
+    };
 
     return (
         <div className="change-day-off">
-            <h1 className='dayoff-header'>Change Day Off</h1><br/>
-            <div className='row'>
-                <div className='col-md-4'>
-                <label>Roster</label>
-                    <select className='form-control' value={selectedRosterId} onChange={handleRosterSelect}>
-                        <option value="">Select a Roster</option>
-                        {rosters.map(roster => (
-                            <option key={roster.id} value={roster.id}>
-                                {new Date(roster.startDate).toLocaleDateString()} - {new Date(roster.endDate).toLocaleDateString()}
-                            </option>
-                        ))}
-                    </select><br/>
-                </div>
-                <div className='col-md-4'>&nbsp;</div>
-            </div>
+            <h1 className='dayoff-header'>Change Day Off</h1><br />
             <div className="row">
                 <div className="col-md-4">
-                    <label>Reason for changing day off</label>
-                    <select className="form-control" value={reason} onChange={handleReasonChange}>
-                        <option value="">Select a reason</option>
-                        <option value="management_request">On Management Request</option>
-                        {/* <option value="exchange_request">Exchange Request</option> */}
-                    </select><br/>
-                </div>
-                <div className="col-md-4">&nbsp;</div>
-            </div>
-            {reason === 'management_request' && (
-                <>
-                <div className="row">
-                    <div className="col-md-4">
-                        <label>Select Employee</label>
-                        <select className="form-control" value={selectedEmployee} onChange={handleEmployeeChange}>
-                            <option value="">Select an Employee</option>
-                            {employees.map(employee => (
-                                <option key={employee.id} value={employee.id}>
-                                    {employee.fullName}
-                                </option>
-                            ))}
-                        </select><br/>
-                    </div>
-                    <div className="col-md-8">&nbsp;</div>
-                </div>
-                <div className="row">
-                <div className="col-md-4">
-                    {Array.isArray(dayOffs) ? (
-                        dayOffs.map(dayOff => (
-                            <div key={dayOff.dayOffDate}>
-                                <label>{dayOff.dayOffDate}</label>
-                                <DatePicker
-                                    selected={newDayOffs[dayOff.dayOffDate]}
-                                    onChange={date => handleDayOffChange(dayOff.dayOffDate, date)}
-                                    minDate={new Date()}
-                                />
+                    <form onSubmit={handleSubmit}>
+                        <div className='row'>
+                            <div className='col-md-12'>
+                                <label>Roster <span className="required-star">*</span></label>
+                                <select className={`form-control ${shouldShowError('selectedRosterId') ? 'error-border' : ''}`} value={selectedRosterId} onChange={handleRosterSelect}>
+                                    <option value="">Select a Roster</option>
+                                    {rosters.map(roster => (
+                                        <option key={roster.id} value={roster.id}>
+                                            {new Date(roster.startDate).toLocaleDateString()} - {new Date(roster.endDate).toLocaleDateString()}
+                                        </option>
+                                    ))}
+                                </select><br />
                             </div>
-                        ))
-                    ) : (
-                        <div>No day offs available or data is not properly formatted.</div>
-                    )}
+                        </div>
+                        <div className="row">
+                            <div className="col-md-12">
+                                <label>Reason for changing day off <span className="required-star">*</span></label>
+                                <select className={`form-control ${shouldShowError('reason') ? 'error-border' : ''}`} value={reason} onChange={handleReasonChange}>
+                                    <option value="">Select a reason</option>
+                                    <option value="management_request">On Management Request</option>
+                                    {/* <option value="exchange_request">Exchange Request</option> */}
+                                </select><br />
+                            </div>
+                        </div>
+                        <div className="row">
+                            <div className="col-md-12">
+                                <label>Select Employee <span className="required-star">*</span></label>
+                                <select className={`form-control ${shouldShowError('selectedEmployee') ? 'error-border' : ''}`} value={selectedEmployee} onChange={handleEmployeeChange}>
+                                    <option value="">Select an Employee</option>
+                                    {employees.map(employee => (
+                                        <option key={employee.id} value={employee.id}>
+                                            {employee.fullName}
+                                        </option>
+                                    ))}
+                                </select><br />
+                            </div>
+                        </div>
+                        <div className='row'>
+                            <div className='col-md-6'>
+                                <label>Change From</label><br />
+                            </div>
+                            <div className='col-md-6'>
+                                <label>Change To</label><br />
+                            </div>
+                        </div><br />
+                        {Array.isArray(dayOffs) ? (
+                            dayOffs.map(dayOff => (
+                                <div key={dayOff.dayOffDate}>
+                                    <div className='row'>
+                                        <div className='col-md-6'>
+                                            <label>{dayOff.dayOffDate.split('T')[0]}</label>
+                                        </div>
+                                        <div className='col-md-6'>
+                                            <DatePicker
+                                                className='form-control'
+                                                selected={newDayOffs[dayOff.dayOffDate]}
+                                                onChange={date => handleDayOffChange(dayOff.dayOffDate, date)}
+                                                minDate={new Date()}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div>No day offs available or data is not properly formatted.</div>
+                        )}
+                        <button type="submit" disabled={loading}>{loading ? 'Updating...' : 'Update Day Off'}</button>
+                    </form>
+                    <ModalComponent show={error !== null} onClose={() => setError(null)} message={error} type="error" />
                 </div>
                 <div className="col-md-8">
-                   
+                    <h3>Pending Day Off Approvals</h3>
+                    <div className="table-container">
+                        <table className="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>From Date</th>
+                                    <th>To Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {pendingApprovals.map((approval, index) => (
+                                    <tr key={index}>
+                                        <td>{approval.dayOffChangeMaster.employee.fullName}</td>
+                                        <td>{new Date(approval.dayOffPre).toLocaleDateString()}</td>
+                                        <td>{new Date(approval.dayOffPost).toLocaleDateString()}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-            </>
-            )}
-            {reason === 'exchange_request' && (
-                <>
-                <div className="row">
-                    <div className="col-md-5">
-                        <label>Select Employee 1</label>
-                        <select className="form-control" value={selectedEmployee} onChange={handleEmployeeChange}>
-                            <option value="">Select an Employee</option>
-                            {employees.map(employee => (
-                                <option key={employee.id} value={employee.id}>
-                                    {employee.fullName}
-                                </option>
-                            ))}
-                        </select><br/>
-                    </div>
-                    <div className="col-md-2"></div>
-                    <div className="col-md-5">
-                        <label>Select Employee 2</label>
-                        <select className="form-control" value={selectedEmployee2} onChange={handleEmployeeChange2}>
-                            <option value="">Select an Employee</option>
-                            {employees.map(employee => (
-                                <option key={employee.id} value={employee.id}>
-                                    {employee.fullName}
-                                </option>
-                            ))}
-                        </select><br/>
-                    </div>
-                </div>
-                {dayOffs.map((dayOff, index) => (
-                    <div className='row' key={index}>
-                        <div className="col-md-5" style={{textAlign:'center'}}>
-                            <label>{new Date(dayOff.dayOffDate).toLocaleDateString()}</label>
-                        </div>
-                        <div className="col-md-2">
-                            <button onClick={() => handleExchangeDays(index)}>
-                                Exchange
-                            </button>
-                        </div>
-                        <div className="col-md-5" style={{textAlign:'center'}}>
-                            {dayOffs2[index] && <label>{new Date(dayOffs2[index].dayOffDate).toLocaleDateString()}</label>}
-                        </div>
-                        
-                    </div>
-                ))}
-                </>
-            )}
-            <button onClick={handleSubmit} disabled={loading}>{loading ? 'Updating...' : 'Update Day Off'}</button>
-            <ModalComponent show={error !== null} onClose={() => setError(null)} message={error} type="error" />
+            {/* Success modal */}
+            <ModalComponent show={successModalOpen} onClose={() => setSuccessModalOpen(false)} type="success" />
+
+            {/* Error modal */}
+            <ModalComponent show={errorModalOpen} onClose={() => setErrorModalOpen(false)} type="error" />
         </div>
     );
 }

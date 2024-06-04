@@ -26,6 +26,7 @@ class User extends React.Component {
       isEditing: false,
       successModalOpen: false,
       errorModalOpen: false,
+      submitAttempted: false,
     };
   }
 
@@ -94,13 +95,27 @@ class User extends React.Component {
 
   handleSubmit = (event) => {
     event.preventDefault();
+    console.log("Form Submitted"); 
+    this.setState({ submitAttempted: true }); // Ensure this is set every time the form is submitted
     const { isEditing, currentUser } = this.state;
-
-    if (isEditing) {
-      this.updateUser(currentUser);
+    if (this.validateForm(currentUser)) { // Use the validateForm function to check the form data
+      if (isEditing) {
+        this.updateUser(currentUser);
+      } else {
+        this.createUser(currentUser);
+      }
     } else {
-      this.createUser(currentUser);
+      console.error("Validation failed");
     }
+  };
+  
+  validateForm = (user) => {
+    // Ensure that all required fields are filled
+    const isValid = user.fullName && user.address && user.nic && user.joinedDate &&
+    user.shiftMasterId && user.employmentTypeId && user.designationId &&
+    user.username && (user.password || this.state.isEditing);
+    console.log("Form validation status:", isValid);
+    return isValid;
   };
 
   createUser = (user) => {
@@ -172,6 +187,7 @@ class User extends React.Component {
         handleSuccessClose={this.handleSuccessClose}
         errorModalOpen={this.state.errorModalOpen}
         handleErrorClose={this.handleErrorClose}
+        submitAttempted={this.state.submitAttempted}
       />
     );
   }

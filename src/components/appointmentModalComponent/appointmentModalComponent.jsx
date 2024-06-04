@@ -32,7 +32,7 @@ const AppointmentModalComponent = ({ show, onClose, type, message }) => {
                 <p className="modal-message">{getMessage()}</p>
             </Modal.Body>
             <Modal.Footer>
-                <Button variant="success" className="modal-button" onClick={handleOKClick}>
+                <Button variant={type === 'success' ? 'Success' : 'Error'} className={`modal-button ${type === 'success' ? 'btn btn-success' : 'btn btn-danger'}`} onClick={handleOKClick}>
                     OK
                 </Button>
             </Modal.Footer>

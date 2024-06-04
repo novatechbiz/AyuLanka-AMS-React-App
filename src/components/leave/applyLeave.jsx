@@ -27,6 +27,9 @@ class ApplyLeave extends React.Component {
       },
       successModalOpen: false,  // Initialize success modal state
       errorModalOpen: false,    // Initialize error modal state
+      submitAttempted: false,
+      confirmModalOpen: false,  // Track confirmation modal state
+      leaveToDelete: null,      // Track the leave to be deleted
     };
   }
 
@@ -72,14 +75,21 @@ class ApplyLeave extends React.Component {
   };
 
   handleDeleteLeave = (leaveId) => {
-    // Assuming deleteLeaveApplication is implemented to handle API request
-    deleteLeaveApplication(leaveId).then(() => {
+    this.setState({ confirmModalOpen: true, leaveToDelete: leaveId });
+  };
+
+  confirmDeleteLeave = () => {
+    const { leaveToDelete } = this.state;
+    deleteLeaveApplication(leaveToDelete).then(() => {
       this.setState(prevState => ({
-        leaveApplications: prevState.leaveApplications.filter(leave => leave.id !== leaveId)
+        leaveApplications: prevState.leaveApplications.filter(leave => leave.id !== leaveToDelete),
+        confirmModalOpen: false,
+        leaveToDelete: null,
       }));
       this.handleSuccessOpen("Leave application deleted successfully.");
     }).catch(error => {
       console.error("Error deleting leave application:", error);
+      this.setState({ confirmModalOpen: false, leaveToDelete: null });
       this.handleErrorOpen("Failed to delete leave application.");
     });
   };
@@ -108,33 +118,16 @@ class ApplyLeave extends React.Component {
 
   handleSubmit = (event) => {
     event.preventDefault();
+    this.setState({ submitAttempted: true });
+
     const { isEditing, currentLeave } = this.state;
-  
-    if (isEditing) {
-      updateLeaveApplication(currentLeave).then((updatedLeave) => {
-        this.setState(prevState => ({
-          leaveApplications: prevState.leaveApplications.map(leave =>
-            leave.id === updatedLeave.id ? updatedLeave : leave
-          ),
-          currentLeave: {
-            employeeId: "",
-            leaveTypeId: "",
-            noOfDays: "",
-            fromDate: "",
-            toDate: "",
-          },
-          isEditing: false
-        }));
-        this.handleSuccessOpen("Leave application updated successfully.");
-      }).catch(error => {
-        console.error("Error updating leave application:", error);
-        this.handleErrorOpen("Failed to update leave application.");
-      });
-    } else {
-      createLeaveApplication(currentLeave)
-        .then((newLeave) => {
+    if (this.validateForm(currentLeave)) { // Validate the form before submission
+      if (isEditing) {
+        updateLeaveApplication(currentLeave).then((updatedLeave) => {
           this.setState(prevState => ({
-            leaveApplications: [...prevState.leaveApplications, newLeave],
+            leaveApplications: prevState.leaveApplications.map(leave =>
+              leave.id === updatedLeave.id ? updatedLeave : leave
+            ),
             currentLeave: {
               employeeId: "",
               leaveTypeId: "",
@@ -142,14 +135,44 @@ class ApplyLeave extends React.Component {
               fromDate: "",
               toDate: "",
             },
+            isEditing: false,
+            submitAttempted: false,
           }));
-          this.handleSuccessOpen("Leave application submitted successfully.");
-        })
-        .catch((error) => {
-          console.error("Error creating leave application:", error);
-          this.handleErrorOpen("Failed to create leave application.");
+          this.handleSuccessOpen("Leave application updated successfully.");
+        }).catch(error => {
+          console.error("Error updating leave application:", error);
+          this.handleErrorOpen("Failed to update leave application.");
         });
+      } else {
+        createLeaveApplication(currentLeave)
+          .then((newLeave) => {
+            this.setState(prevState => ({
+              leaveApplications: [...prevState.leaveApplications, newLeave],
+              currentLeave: {
+                employeeId: "",
+                leaveTypeId: "",
+                noOfDays: "",
+                fromDate: "",
+                toDate: "",
+              },
+              submitAttempted: false,
+            }));
+            this.handleSuccessOpen("Leave application submitted successfully.");
+          })
+          .catch((error) => {
+            console.error("Error creating leave application:", error);
+            this.handleErrorOpen("Failed to create leave application.");
+          });
+      }
+    } else {
+      console.error("Validation failed");
     }
+  };
+
+  validateForm = (leave) => {
+    const isValid = leave.employeeId && leave.leaveTypeId && leave.noOfDays && leave.fromDate && leave.toDate;
+    console.log("Form validation status:", isValid);
+    return isValid;
   };
 
   formatDate = (dateString) => {
@@ -158,7 +181,17 @@ class ApplyLeave extends React.Component {
   };
 
   render() {
-    return (
+    const { currentLeave, submitAttempted, confirmModalOpen } = this.state;
+
+    // Helper function to check if the field should show an error border
+    const shouldShowError = (field) => {
+      const isEmpty = !currentLeave[field];
+      const shouldShow = isEmpty && submitAttempted;
+      console.log(`Field: ${field}, Empty: ${isEmpty}, Show Error: ${shouldShow}`);
+      return shouldShow;
+    };
+
+    return  (
       <div className="container">
         <div className="row">
           <div className="col-md-4">
@@ -166,13 +199,12 @@ class ApplyLeave extends React.Component {
             <form onSubmit={this.handleSubmit}>
               {/* Form Fields */}
               <div className="form-group">
-                <label htmlFor="employeeId">Employee</label>
+                <label htmlFor="employeeId">Employee <span className="required-star">*</span></label>
                 <select
-                  className="form-control"
+                  className={`form-control ${shouldShowError('employeeId') ? 'error-border' : ''}`}
                   name="employeeId"
-                  value={this.state.currentLeave.employeeId}
+                  value={currentLeave.employeeId}
                   onChange={this.handleInputChange}
-                  required
                   disabled={this.state.isEditing}
                 >
                   <option value="">Select Employee</option>
@@ -184,13 +216,12 @@ class ApplyLeave extends React.Component {
                 </select>
               </div>
               <div className="form-group">
-                <label htmlFor="leaveTypeId">Leave Type</label>
+                <label htmlFor="leaveTypeId">Leave Type <span className="required-star">*</span></label>
                 <select
-                  className="form-control"
+                  className={`form-control ${shouldShowError('leaveTypeId') ? 'error-border' : ''}`}
                   name="leaveTypeId"
-                  value={this.state.currentLeave.leaveTypeId}
+                  value={currentLeave.leaveTypeId}
                   onChange={this.handleInputChange}
-                  required
                 >
                   <option value="">Select Leave Type</option>
                   {this.state.leaveTypes.map((leaveType) => (
@@ -201,37 +232,34 @@ class ApplyLeave extends React.Component {
                 </select>
               </div>
               <div className="form-group">
-                <label htmlFor="noOfDays">Number of Days</label>
+                <label htmlFor="noOfDays">Number of Days <span className="required-star">*</span></label>
                 <input
                   type="number"
-                  className="form-control"
+                  className={`form-control ${shouldShowError('noOfDays') ? 'error-border' : ''}`}
                   name="noOfDays"
-                  value={this.state.currentLeave.noOfDays}
+                  value={currentLeave.noOfDays}
                   onChange={this.handleInputChange}
                   placeholder="Number of Days"
-                  required
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="fromDate">From Date</label>
+                <label htmlFor="fromDate">From Date <span className="required-star">*</span></label>
                 <input
                   type="date"
-                  className="form-control"
+                  className={`form-control ${shouldShowError('fromDate') ? 'error-border' : ''}`}
                   name="fromDate"
-                  value={this.state.currentLeave.fromDate}
+                  value={currentLeave.fromDate}
                   onChange={this.handleInputChange}
-                  required
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="toDate">To Date</label>
+                <label htmlFor="toDate">To Date <span className="required-star">*</span></label>
                 <input
                   type="date"
-                  className="form-control"
+                  className={`form-control ${shouldShowError('toDate') ? 'error-border' : ''}`}
                   name="toDate"
-                  value={this.state.currentLeave.toDate}
+                  value={currentLeave.toDate}
                   onChange={this.handleInputChange}
-                  required
                 />
               </div>
               <button type="submit" className="btn btn-primary">Apply</button>
@@ -239,16 +267,18 @@ class ApplyLeave extends React.Component {
           </div>
           <div className="col-md-8">
             <h2 className="leaves-header">Applied Leaves</h2>
-            <table className="table table-striped">
-              <thead>
-                <tr>
-                  <th>Employee</th>
-                  <th>Leave Type</th>
-                  <th>From</th>
-                  <th>To</th>
-                  <th>Days</th>
-                </tr>
-              </thead>
+            <div className="table-scrollable">
+              <table className="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Employee</th>
+                    <th>Leave Type</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Days</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {this.state.leaveApplications.map((leave, index) => (
                     <tr key={index}>
@@ -263,8 +293,9 @@ class ApplyLeave extends React.Component {
                       </td>
                     </tr>
                   ))}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
         {/* Success modal */}
@@ -273,11 +304,13 @@ class ApplyLeave extends React.Component {
         {/* Error modal */}
         <ModalComponent show={this.state.errorModalOpen} onClose={this.handleErrorClose}  type="error" />
 
-        {/* <ConfirmationModal
-                isOpen={isConfirmModalOpen}
-                onClose={() => setIsConfirmModalOpen(false)}
-                onConfirm={handleDelete}
-            /> */}
+        <ConfirmationModal
+          isOpen={confirmModalOpen}
+          onClose={() => this.setState({ confirmModalOpen: false, leaveToDelete: null })}
+          onConfirm={this.confirmDeleteLeave}
+          headerMessage="Confirm Deletion"
+          bodyMessage="Are you sure you want to delete this leave application?"
+        />
       </div>
     );
   }

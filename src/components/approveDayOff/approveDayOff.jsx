@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { getPendingDayOffs, updateDayOff } from '../../services/employeeRoster';
 import './approveDayOff.css';
+import ModalComponent from '../modalComponent/modalComponent';
 
 function ApproveDayOffs() {
     const [dayOffRequests, setDayOffRequests] = useState([]);
     const [selectedRequests, setSelectedRequests] = useState({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [successModalOpen, setSuccessModalOpen] = useState(false);
+    const [errorModalOpen, setErrorModalOpen] = useState(false);
 
     useEffect(() => {
         fetchPendingDayOffs();
@@ -30,7 +33,26 @@ function ApproveDayOffs() {
         setSelectedRequests(prev => ({ ...prev, [id]: !prev[id] }));
     };
 
+    const handleSelectAll = () => {
+        const allSelected = Object.values(selectedRequests).length === dayOffRequests.length && Object.values(selectedRequests).every(isSelected => isSelected);
+        if (allSelected) {
+            // Deselect all if all are selected
+            setSelectedRequests({});
+        } else {
+            // Select all
+            const newSelectedRequests = dayOffRequests.reduce((acc, request) => {
+                acc[request.id] = true;
+                return acc;
+            }, {});
+            setSelectedRequests(newSelectedRequests);
+        }
+    };
+
     const handleApproval = async (isApproved) => {
+        if (isApproved === null) {
+            window.location.reload(); // Reload the page
+            return;
+        }
         setLoading(true);
         const userId = sessionStorage.getItem('userId'); // Assume user ID is stored in session storage
     
@@ -73,61 +95,86 @@ function ApproveDayOffs() {
         try {
             await updateDayOff(dataToSend); // Uncomment this to send the data to your backend API
             fetchPendingDayOffs(); // Refresh the list after updating
-            alert(`Day off requests have been ${isApproved ? 'approved' : 'rejected'}!`);
+            setSuccessModalOpen(true); // Open success modal
         } catch (error) {
             setError('Failed to update approval status');
+            setErrorModalOpen(true); // Open error modal
             console.error(error);
         } finally {
             setLoading(false);
         }
     };
-    
 
     if (loading) return <p className="approve-loading">Loading...</p>;
     if (error) return <p className="approve-error">Error: {error}</p>;
 
     return (
         <div className="approve-container">
-            <h1>Approve Day Off Requests</h1>
+            <h1 className='approve-dayoff-header'>Approve Day Off Requests</h1>
             {dayOffRequests.length > 0 ? (
-                <table className="approve-table">
-                    <thead>
-                        <tr>
-                            <th>Select</th>
-                            <th>Employee Name</th>
-                            <th>Day Off Date Before</th>
-                            <th>Day Off Date After</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {dayOffRequests.map(request => (
-                            <tr key={request.id}>
-                                <td>
+                <div className="table-container">
+                    <table className="approve-table">
+                        <thead>
+                            <tr>
+                                <th>
                                     <input
                                         type="checkbox"
-                                        checked={!!selectedRequests[request.id]}
-                                        onChange={() => handleSelectRequest(request.id)}
+                                        checked={Object.values(selectedRequests).length === dayOffRequests.length && Object.values(selectedRequests).every(isSelected => isSelected)}
+                                        onChange={handleSelectAll}
                                     />
-                                </td>
-                                <td>{request.dayOffChangeMaster.employee.fullName}</td>
-                                <td>{new Date(request.dayOffPre).toLocaleDateString()}</td>
-                                <td>{new Date(request.dayOffPost).toLocaleDateString()}</td>
+                                </th>
+                                <th>Employee Name</th>
+                                <th>Day Off Date Before</th>
+                                <th>Day Off Date After</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {dayOffRequests.map(request => (
+                                <tr key={request.id}>
+                                    <td>
+                                        <input
+                                            type="checkbox"
+                                            checked={!!selectedRequests[request.id]}
+                                            onChange={() => handleSelectRequest(request.id)}
+                                        />
+                                    </td>
+                                    <td>{request.dayOffChangeMaster.employee.fullName}</td>
+                                    <td>{new Date(request.dayOffPre).toLocaleDateString()}</td>
+                                    <td>{new Date(request.dayOffPost).toLocaleDateString()}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             ) : (
                 <p>No pending requests.</p>
             )}
             <div className="row approve-buttons">
                 <div className='col-md-8'>&nbsp;</div>
                 <div className='col-md-2'>
-                <button className="approve-btn approve" onClick={() => handleApproval(true)} disabled={loading || Object.values(selectedRequests).every(v => !v)}>Approve</button>
+                    <button
+                        className="approve-btn reject"
+                        onClick={() => handleApproval(null)}
+                        disabled={loading}
+                    >
+                        Cancel
+                    </button>
                 </div>
                 <div className='col-md-2'>
-                <button className="approve-btn reject" onClick={() => handleApproval(false)} disabled={loading || Object.values(selectedRequests).every(v => !v)}>Reject</button>
+                    <button
+                        className="approve-btn approve"
+                        onClick={() => handleApproval(true)}
+                        disabled={loading || Object.values(selectedRequests).every(v => !v)}
+                    >
+                        Approve
+                    </button>
                 </div>
             </div>
+            {/* Success modal */}
+            <ModalComponent show={successModalOpen} onClose={() => setSuccessModalOpen(false)} type="success" />
+
+            {/* Error modal */}
+            <ModalComponent show={errorModalOpen} onClose={() => setErrorModalOpen(false)} type="error" />
         </div>
     );
 }

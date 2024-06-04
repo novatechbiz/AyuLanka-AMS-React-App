@@ -12,7 +12,8 @@
     align-items: center;
     padding-top: 20px;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-    transition: width 0.2s;
+    transition: transform 0.3s ease-in-out;
+    z-index: 1000;
 }
 
 .sidebar h2 {
@@ -94,4 +95,35 @@
 .login-page .main-content {
     margin-left: 0;
     width: 100%;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+        position: fixed;
+        width: 100%;
+        height: auto;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .sidebar-toggle {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        font-size: 24px;
+        color: #ecf0f1;
+        z-index: 1001;
+    }
+
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
 }
