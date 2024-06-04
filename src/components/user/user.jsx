@@ -1,189 +1,134 @@
 import React from "react";
-import "./user.css"; // Make sure the path is correct
+import "./user.css";
 import ModalComponent from "../modalComponent/modalComponent";
 
 function UserTemplate(props) {
-  console.log(props)
+  const {
+    submitAttempted,
+    currentUser,
+    handleInputChange,
+    handleSubmit,
+    isEditing,
+    shiftMasters,
+    employmentTypes,
+    designations,
+    users,
+    successModalOpen,
+    handleSuccessClose,
+    errorModalOpen,
+    handleErrorClose
+  } = props;
+
+  console.log("Submit Attempted:", submitAttempted);
+
+  // Helper function to check if the field should show an error border
+  const shouldShowError = (field) => {
+    const isEmpty = !currentUser[field];
+    const shouldShow = isEmpty && submitAttempted;
+    console.log(`Field: ${field}, Empty: ${isEmpty}, Show Error: ${shouldShow}`);
+    return shouldShow;
+  };
+
   return (
     <div className="container">
       <div className="row user-content">
-      <div className="col-md-4 form-column">
-  <h2 className="edit-create-header">{props.isEditing ? "Edit Employee" : "Create Employee"}</h2>
-
-  <form onSubmit={props.handleSubmit}>
-    <div className="form-group">
-      <label htmlFor="fullName">Full Name</label>
-      <input
-        type="text"
-        className="form-control"
-        id="fullName"
-        name="fullName"
-        value={props.currentUser.fullName}
-        onChange={props.handleInputChange}
-        placeholder="e.g., John Doe"
-        required
-      />
-    </div>
-    <div className="form-group">
-      <label htmlFor="address">Address</label>
-      <input
-        type="text"
-        className="form-control"
-        id="address"
-        name="address"
-        value={props.currentUser.address}
-        onChange={props.handleInputChange}
-        placeholder="e.g., 1234 Main St, City"
-        required
-      />
-    </div>
-    <div className="form-group">
-      <label htmlFor="nic">NIC</label>
-      <input
-        type="text"
-        className="form-control"
-        id="nic"
-        name="nic"
-        value={props.currentUser.nic}
-        onChange={props.handleInputChange}
-        placeholder="e.g., 123456789V"
-        required
-      />
-    </div>
-    <div className="form-group">
-      <label htmlFor="joinedDate">Joined Date</label>
-      <input
-        type="date"
-        className="form-control"
-        id="joinedDate"
-        name="joinedDate"
-        value={props.currentUser.joinedDate}
-        onChange={props.handleInputChange}
-        required
-      />
-    </div>
-    <div className="form-group">
-      <label htmlFor="shiftMasterId">Shift</label>
-      <select
-        className="form-control"
-        id="shiftMasterId"
-        name="shiftMasterId"
-        value={props.currentUser.shiftMasterId}
-        onChange={props.handleInputChange}
-        required
-      >
-        <option value="">--Select--</option>
-        {props.shiftMasters.map((shift) => (
-          <option key={shift.id} value={shift.id}>
-            {shift.fromTime} - {shift.toTime}
-          </option>
-        ))}
-      </select>
-    </div>
-    <div className="form-group">
-      <label htmlFor="employmentTypeId">Employment Type</label>
-      <select
-        className="form-control"
-        id="employmentTypeId"
-        name="employmentTypeId"
-        value={props.currentUser.employmentTypeId}
-        onChange={props.handleInputChange}
-        required
-      >
-        <option value="">--Select--</option>
-        {props.employmentTypes.map((type) => (
-          <option key={type.id} value={type.id}>
-            {type.name}
-          </option>
-        ))}
-      </select>
-    </div>
-    <div className="form-group">
-      <label htmlFor="designationId">Designation</label>
-      <select
-        className="form-control"
-        id="designationId"
-        name="designationId"
-        value={props.currentUser.designationId}
-        onChange={props.handleInputChange}
-        required
-      >
-        <option value="">--Select--</option>
-        {props.designations.map((designation) => (
-          <option key={designation.id} value={designation.id}>
-            {designation.name}
-          </option>
-        ))}
-      </select>
-    </div>
-    <div className="form-group">
-      <label htmlFor="username">Username</label>
-      <input
-        type="text"
-        className="form-control"
-        id="username"
-        name="username"
-        value={props.currentUser.username}
-        onChange={props.handleInputChange}
-        placeholder="e.g., john.doe"
-        required
-      />
-    </div>
-    {!props.isEditing && (
-        <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-                type="password"
-                className="form-control"
-                id="password"
-                name="password"
-                value={props.currentUser.password}
-                onChange={props.handleInputChange}
-                placeholder="e.g., ••••••••"
-                required={!props.isEditing}
-            />
+        <div className="col-md-4 form-column">
+          <h2 className="edit-create-header">{isEditing ? "Edit Employee" : "Create Employee"}</h2>
+          <form onSubmit={handleSubmit}>
+            {[
+              { id: "fullName", label: "Full Name" },
+              { id: "address", label: "Address" },
+              { id: "nic", label: "NIC" },
+              { id: "joinedDate", label: "Joined Date", type: "date" },
+              { id: "shiftMasterId", label: "Shift", type: "select", options: shiftMasters, optionLabelFields: ['fromTime', 'toTime'] },
+              { id: "employmentTypeId", label: "Employment Type", type: "select", options: employmentTypes, optionLabelField: 'name' },
+              { id: "designationId", label: "Designation", type: "select", options: designations, optionLabelField: 'name' },
+              { id: "username", label: "Username" }
+            ].map((field) => (
+              <div key={field.id} className="form-group">
+                <label htmlFor={field.id}>{field.label} <span className="required-star">*</span></label>
+                {field.type === 'select' ? (
+                  <select
+                    className={`form-control ${shouldShowError(field.id) ? 'error-border' : ''}`}
+                    id={field.id}
+                    name={field.id}
+                    value={currentUser[field.id]}
+                    onChange={handleInputChange}
+                  >
+                    <option value="">--Select--</option>
+                    {field.options.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {field.optionLabelFields ? field.optionLabelFields.map(f => option[f]).join(' - ') : option[field.optionLabelField]}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type={field.type || "text"}
+                    className={`form-control ${shouldShowError(field.id) ? 'error-border' : ''}`}
+                    id={field.id}
+                    name={field.id}
+                    value={currentUser[field.id]}
+                    onChange={handleInputChange}
+                  />
+                )}
+              </div>
+            ))}
+            {!isEditing && (
+              <div className="form-group">
+                <label htmlFor="password">Password <span className="required-star">*</span></label>
+                <input
+                  type="password"
+                  className={`form-control ${shouldShowError('password') ? 'error-border' : ''}`}
+                  id="password"
+                  name="password"
+                  value={currentUser.password}
+                  onChange={handleInputChange}
+                  required={!isEditing}
+                />
+              </div>
+            )}
+            <button type="submit" className="btn btn-primary btn-block">
+              {isEditing ? "Update" : "Create"}
+            </button>
+          </form>
         </div>
-    )}
-    <button type="submit" className="btn btn-primary btn-block">
-      {props.isEditing ? "Update" : "Create"}
-    </button>
-  </form>
-</div>
-
         <div className="col-md-7 table-column">
           <h2 className="employees-header">Employees</h2>
-          <table className="table table-striped">
-            <thead>
-              <tr>
-                <th>Full Name</th>
-                <th>NIC</th>
-                <th className="actions">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {props.users.map((user) => (
-                <tr key={user.id}>
-                  <td>{user.fullName}</td>
-                  <td>{user.nic}</td>
-                  <td className="actions">
-                    <button style={{backgroundColor:'#28a745'}}
-                      className="btn btn-sm btn-success"
-                      onClick={() => props.editUser(user)}
-                    >
-                      Edit
-                    </button>
-                  </td>
+          <div className="table-scrollable">
+            <table className="table table-striped">
+              <thead>
+                <tr>
+                  <th>Full Name</th>
+                  <th>NIC</th>
+                  <th className="actions">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.id}>
+                    <td>{user.fullName}</td>
+                    <td>{user.nic}</td>
+                    <td className="actions">
+                      <button
+                        className="btn btn-sm btn-success"
+                        onClick={() => props.editUser(user)}
+                        style={{ backgroundColor: '#28a745' }}
+                      >
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-        {/* Success modal */}
-        <ModalComponent show={props.successModalOpen} onClose={props.handleSuccessClose} type="success" />
-
-        {/* Error modal */}
-        <ModalComponent show={props.errorModalOpen} onClose={props.handleErrorClose} type="error" />
+      {/* Success modal */}
+      <ModalComponent show={successModalOpen} onClose={handleSuccessClose} type="success" />
+      {/* Error modal */}
+      <ModalComponent show={errorModalOpen} onClose={handleErrorClose} type="error" />
     </div>
   );
 }

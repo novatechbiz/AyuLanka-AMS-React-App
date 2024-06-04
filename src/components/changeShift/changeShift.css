@@ -1,5 +1,4 @@
 .shift-change-container {
-    width: 80%;
     margin: auto;
     padding-top: 20px;
 }
@@ -55,4 +54,25 @@
     width: 100%; /* Ensure dropdown fills the container width */
     padding: 8px;
     margin-top: 10px; /* Align with the label */
+}
+
+.shift-change-header {
+    font-size: 24px;
+    color: #16A085; /* Dark slate color */
+    text-align: left;
+    padding: 10px 0;
+    border-bottom: 3px solid #BDC3C7; /* Light grey underline */
+    padding-top: 0px !important;
+}
+
+.error-border {
+    border: 2px solid red !important;
+}
+.required-star {
+    color: red !important;
+}
+
+.table-container {
+    max-height: 400px;
+    overflow-y: auto;
 }

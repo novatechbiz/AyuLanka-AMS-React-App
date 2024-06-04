@@ -76,6 +76,7 @@ function ViewRoster() {
 
     const processRosterDetails = (details) => {
         const groupedDetails = {};
+        console.log('Roster details:', details);
         details.forEach(detail => {
             const empId = detail.employeeId;
             if (!groupedDetails[empId]) {
@@ -86,7 +87,10 @@ function ViewRoster() {
                 };
             }
             const dayOffDate = new Date(detail.dayOffDate).toLocaleDateString('sv-SE');
-            groupedDetails[empId].daysOff[dayOffDate] = detail.isDayOff;
+            // Only set the day off if it is not already set to true
+            if (groupedDetails[empId].daysOff[dayOffDate] !== true) {
+                groupedDetails[empId].daysOff[dayOffDate] = detail.isDayOff;
+            }
         });
         setRosterDetailsByEmployee(groupedDetails);
     };
@@ -229,7 +233,7 @@ function ViewRoster() {
                                             </select>
                                         </td>
                                         {days.map(day => {
-                                            console.log('days: ', days)
+                                            //console.log('detail: ', detail)
                                             const dayString = day.date.toLocaleDateString('sv-SE');
                                             const isDayOff = detail.daysOff[dayString] || false;
                                             const employeeLeaveData = leaveData[employee.id] || {};

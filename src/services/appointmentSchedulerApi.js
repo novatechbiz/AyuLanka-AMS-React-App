@@ -128,3 +128,33 @@ export const deleteAppointment = async (appointmentId) => {
       throw error; // Re-throw the error to allow calling code to handle it further if necessary
   }
 };
+
+export const fetchDayOffsData  = async (date) => {
+  try {
+      const response = await api.get(`/staffroster/getdayoffsbydate/${date}`);
+      return response.data;  // Assuming the API returns an array of appointments
+  } catch (error) {
+      console.error("Error fetching day offs:", error);
+      throw error;
+  }
+};
+
+export const fetchLeaveData   = async (date) => {
+  try {
+      const response = await api.get(`/staffleave/getleavesbydate/${date}`);
+      return response.data;  // Assuming the API returns an array of appointments
+  } catch (error) {
+      console.error("Error fetching leaves:", error);
+      throw error;
+  }
+};
+
+export const fetchShiftsData   = async (date) => {
+  try {
+      const response = await api.get(`/staffroster/getworkingshiftssbydate/${date}`);
+      return response.data;  // Assuming the API returns an array of appointments
+  } catch (error) {
+      console.error("Error fetching shifts:", error);
+      throw error;
+  }
+};

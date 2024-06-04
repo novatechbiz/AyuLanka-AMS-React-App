@@ -8,10 +8,14 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './appointmentScheduler.css'; // Ensure this file contains your custom styles
-import { deleteAppointment, fetchEmployees, fetchEmployeeSchedule, fetchTreatmentLocations, addAppointment, fetchAppointments, fetchTreatmentTypesByLocation, fetchAppointmentDetails } from '../../services/appointmentSchedulerApi.js';
+import { deleteAppointment, fetchEmployees, fetchEmployeeSchedule, fetchTreatmentLocations, addAppointment, fetchAppointments, fetchTreatmentTypesByLocation, fetchAppointmentDetails, fetchLeaveData, fetchDayOffsData, fetchShiftsData } from '../../services/appointmentSchedulerApi.js';
 import { ConfirmationModal } from '../confirmationModal/confirmationModal.jsx';
 import { NotificationComponent } from '../notificationComponent/notificationComponent.jsx';
 import AppointmentModalComponent from '../appointmentModalComponent/appointmentModalComponent.jsx';
+import moment from 'moment';
+import { EmployeeDayOffsModal } from '../employeeDayOffsModal/employeeDayOffsModal.jsx';
+import { EmployeeLeavesModal } from '../employeeLeavesModal/employeeLeavesModal.jsx';
+import { EmployeeShiftsModal } from '../employeeShiftsModal/employeeShiftsModal.jsx';
 
 Modal.setAppElement('#root');
 
@@ -45,6 +49,13 @@ function AppointmentScheduler() {
         scheduleDate: false
     });
 
+    const [isDayOffModalOpen, setIsDayOffModalOpen] = useState(false);
+    const [isLeavesModalOpen, setIsLeavesModalOpen] = useState(false);
+    const [isShiftsModalOpen, setIsShiftsModalOpen] = useState(false);
+    const [dayOffsData, setDayOffsData] = useState([]);
+    const [leavesData, setLeavesData] = useState([]);
+    const [shiftsData, setShiftsData] = useState([]);
+
     // Fetch Employees and Treatment Types from API
     useEffect(() => {
         const loadData = async () => {
@@ -65,6 +76,43 @@ function AppointmentScheduler() {
 
         loadData();
     }, []);
+
+    // Function to fetch and set Day Offs data
+    const openDayOffsModal = async () => {
+        const date = moment(startTime).format('YYYY-MM-DD');
+        console.log(date)
+        try {
+            const data = await fetchDayOffsData(date);
+            setDayOffsData(data);
+            setIsDayOffModalOpen(true);
+        } catch (error) {
+            console.error('Error fetching day offs data:', error);
+        }
+    };
+
+    // Function to fetch and set Leaves data
+    const openShiftsModal = async () => {
+        const date = moment(startTime).format('YYYY-MM-DD');
+        try {
+            const data = await fetchShiftsData(date);
+            setShiftsData(data);
+            setIsShiftsModalOpen(true);
+        } catch (error) {
+            console.error('Error fetching shifts data:', error);
+        }
+    };
+
+        // Function to fetch and set Shifts data
+        const openLeavesModal = async () => {
+            const date = moment(startTime).format('YYYY-MM-DD');
+            try {
+                const data = await fetchLeaveData(date);
+                setLeavesData(data);
+                setIsLeavesModalOpen(true);
+            } catch (error) {
+                console.error('Error fetching leaves data:', error);
+            }
+        };
 
 
     const formatAppointments = (appointments) => {
@@ -202,54 +250,45 @@ function AppointmentScheduler() {
             console.log('Validation errors', errors);
             return;
         }
-    
+
         // Find the selected treatment type and employee
         const selectedTreatment = treatmentTypes.find(type => type.id.toString() === appointmentData.treatmentTypeId);
         const selectedEmployee = employees.find(emp => emp.id.toString() === appointmentData.employeeId);
-    
+
         if (!selectedTreatment || !selectedEmployee) {
             setNotification({ message: "Selected treatment type or employee is invalid.", type: 'error' });
-            //console.error("Selected treatment type or employee is invalid");
             return;
         }
 
-        const startTime = new Date(appointmentData.startTime);
-        const endTime = new Date(appointmentData.endTime);
+        const startTime = moment(appointmentData.startTime).toDate();
+        const endTime = moment(appointmentData.endTime).toDate();
 
-
-        
         const isOverlap = currentEvents.some(event => {
-            // Exclude the event being edited by checking IDs
             if (appointmentData.id && (event.id.toString() === appointmentData.id.toString())) return false;
-            console.log('current event: ', appointmentData.id, 'checking event: ', event.id)
+            console.log('current event: ', appointmentData.id, 'checking event: ', event.id);
             const eventEmployeeId = event.employeeId;
-            const eventStart = new Date(event.start);
-            const eventEnd = new Date(event.end);
+            const eventStart = moment(event.start).toDate();
+            const eventEnd = moment(event.end).toDate();
             const isStartWithinEvent = startTime >= eventStart && startTime < eventEnd;
             const isEndWithinEvent = endTime > eventStart && endTime <= eventEnd;
             const isEventWithinNew = eventStart >= startTime && eventEnd <= endTime;
-        
+
             return eventEmployeeId === selectedEmployee.id && (isStartWithinEvent || isEndWithinEvent || isEventWithinNew);
         });
-        
+
         if (isOverlap) {
             setNotification({ message: `The employee ${selectedEmployee.fullName} is already assigned to another appointment during this time.`, type: 'error' });
             return;
         }
 
-        const scheduleDate = new Date(appointmentData.scheduleDate);
-        console.log('appointmentData.scheduleDate' ,appointmentData.scheduleDate)
+        const scheduleDate = moment(appointmentData.scheduleDate).toDate();
         const employeeSchedule = await fetchEmployeeSchedule(selectedEmployee.id, scheduleDate);
-
-        console.log('employeeSchedule', employeeSchedule)
 
         if (!employeeSchedule) {
             setNotification({ message: `The selected employee is on leave or has a day off on the selected date.`, type: 'error' });
             return;
         }
 
-
-        // Default locale and options
         const startTimeFormatted = startTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const endTimeFormatted = endTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
@@ -266,8 +305,7 @@ function AppointmentScheduler() {
         }
 
         const userId = sessionStorage.getItem('userId');
-    
-        // Prepare the data for the API
+
         const appointmentDataToSend = {
             Id: appointmentData.id != 0 ? appointmentData.id : 0,
             ScheduleDate: appointmentData.scheduleDate,
@@ -279,20 +317,26 @@ function AppointmentScheduler() {
             ToTime: formatTimeForCSharp(appointmentData.endTime),
             EnteredBy: userId,
             EnteredDate: new Date().toISOString(),
-            TokenNo: appointmentData.tokenNo,
-            TokenIssueTime: new Date().toISOString()
+            TokenNo: appointmentData.tokenNo
         };
-    
+
         console.log('appointmentDataToSend', appointmentDataToSend);
-        // Send the data to the API
         try {
             const createdAppointment = await addAppointment(appointmentDataToSend);
             console.log('Appointment created:', createdAppointment);
-            setModalContent({ type: 'success', message: 'Appointment created successfully!' });
+            if (appointmentData.id !== 0 && appointmentData.id !== undefined) {
+                setModalContent({ type: 'success', message: 'Appointment updated successfully!' });
+            } else {
+                setModalContent({ type: 'success', message: 'Appointment created successfully!' });
+            }
             setShowModal(true);
         } catch (error) {
             console.error('Failed to create appointment:', error);
-            setModalContent({ type: 'error', message: 'Failed to create appointment' });
+            if (appointmentData.id != 0 && appointmentData.id != undefined) {
+                setModalContent({ type: 'error', message: 'Failed to update appointment' });
+            } else {
+                setModalContent({ type: 'error', message: 'Failed to create appointment' });
+            }
             setShowModal(true);
             return;
         }
@@ -302,6 +346,7 @@ function AppointmentScheduler() {
         resetAppointmentForm(); // Clear or reset the form state
         setSelectedResource({});
     };
+
 
     const refreshAppointments = async () => {
         const updatedAppointments = await fetchAppointments();
@@ -325,82 +370,71 @@ function AppointmentScheduler() {
     
     const handleEventDrop = async (info) => {
         const { event } = info;
-        const newStart = event.start;
-        const newEnd = event.end;
+        const newStart = moment(event.start).toDate();
+        const newEnd = moment(event.end).toDate();
+        
+        console.log('New Start:', newStart);
+        console.log('New End:', newEnd);
     
         try {
             const appointmentDetails = await fetchAppointmentDetails(event.id);
-
+    
             const treatmentTypesbyLocations = await fetchTreatmentTypesByLocation();
     
             const filteredTreatmentType = treatmentTypesbyLocations.find(item => {
-                console.log("Checking item:", item.locationId, item.treatmentTypeId);
                 return item.locationId === parseInt(event._def.resourceIds[0], 10) &&
-                       item.treatmentTypeId === parseInt(appointmentDetails.treatmentTypeId, 10);
+                    item.treatmentTypeId === parseInt(appointmentDetails.treatmentLocation.treatmentTypeId, 10);
             });
-
-
-            // Find the selected treatment type and employee
+    
             const treatmentTypesNew = treatmentTypesbyLocations.filter(item => item.locationId === parseInt(event._def.resourceIds[0]));
             const selectedTreatment = treatmentTypesNew.find(type => type.treatmentTypeId.toString() === appointmentDetails.treatmentLocation.treatmentTypeId.toString());
             const selectedEmployee = employees.find(emp => emp.id.toString() === appointmentDetails.employeeId.toString());
-
+    
             if (!selectedTreatment || !selectedEmployee) {
-
                 setNotification({ message: "Selected treatment type or employee is invalid.", type: 'error' });
                 return;
             }
-
-            const startTime2 = new Date(appointmentDetails.fromTime);
-            const endTime2 = new Date(appointmentDetails.toTime);
-
+    
             const isOverlap = currentEvents.some(event => {
-                // Exclude the event being edited by checking IDs
                 if (event.id.toString() === appointmentDetails.id.toString()) return false;
-            
                 const eventEmployeeId = event.employeeId;
-                const eventStart = new Date(event.start);
-                const eventEnd = new Date(event.end);
-                const isStartWithinEvent = startTime2 >= eventStart && startTime2 < eventEnd;
-                const isEndWithinEvent = endTime2 > eventStart && endTime2 <= eventEnd;
-                const isEventWithinNew = eventStart >= startTime2 && eventEnd <= endTime2;
-            
+                const eventStart = moment(event.start).toDate();
+                const eventEnd = moment(event.end).toDate();
+                const isStartWithinEvent = newStart >= eventStart && newStart < eventEnd;
+                const isEndWithinEvent = newEnd > eventStart && newEnd <= eventEnd;
+                const isEventWithinNew = eventStart >= newStart && eventEnd <= newEnd;
+    
                 return eventEmployeeId === selectedEmployee.id && (isStartWithinEvent || isEndWithinEvent || isEventWithinNew);
             });
-            
+    
             if (isOverlap) {
                 setNotification({ message: `The employee ${selectedEmployee.fullName} is already assigned to another appointment during this time.`, type: 'error' });
                 return;
             }
-
-            const scheduleDate = new Date(appointmentDetails.scheduleDate);
+    
+            const scheduleDate = moment(newStart).toDate();
+            console.log('Schedule Date:', scheduleDate);
             const employeeSchedule = await fetchEmployeeSchedule(selectedEmployee.id, scheduleDate);
-
-            console.log('employeeSchedule', employeeSchedule)
-
+    
             if (!employeeSchedule) {
                 setNotification({ message: `The selected employee is on leave or has a day off on the selected date.`, type: 'error' });
                 return;
             }
-
-
-            const eventStart = new Date(event.start);
-            const eventEnd = new Date(event.end);
-
-            const convertedFromShift = convertTimeToDateTime(employeeSchedule.shiftMaster.fromTime, eventStart);
-            const convertedToShift = convertTimeToDateTime(employeeSchedule.shiftMaster.toTime, eventStart);
-            // console.log('workEndTime', workEndTime)
-
-            const isValid = isWithinWorkHours(eventStart, eventEnd, convertedFromShift, convertedToShift);
-            //const isValid = false;
+    
+            const convertedFromShift = convertTimeToDateTime(employeeSchedule.shiftMaster.fromTime, newStart);
+            const convertedToShift = convertTimeToDateTime(employeeSchedule.shiftMaster.toTime, newStart);
+    
+            console.log('Converted From Shift:', convertedFromShift);
+            console.log('Converted To Shift:', convertedToShift);
+    
+            const isValid = isWithinWorkHours(newStart, newEnd, convertedFromShift, convertedToShift);
             if (!isValid) {
                 setNotification({ message: `The appointment time does not align with the ${selectedEmployee.fullName}'s working hours. Shift of the selected employee is ${employeeSchedule.shiftMaster.fromTime} - ${employeeSchedule.shiftMaster.toTime}`, type: 'error' });
                 return;
             }
-
+    
             const userId = sessionStorage.getItem('userId');
-
-            // Update the event in state and possibly send update to server
+    
             const updatedEvents = currentEvents.map(ev => {
                 if (ev.id === event.id) {
                     return { ...ev, start: newStart, end: newEnd };
@@ -420,34 +454,36 @@ function AppointmentScheduler() {
                 customerName: appointmentDetails.customerName,
                 contactNo: appointmentDetails.contactNo,
                 tokenNo: appointmentDetails.tokenNo,
-                tokenIssueTime: new Date(appointmentDetails.tokenIssueTime),
                 resourceId: event._def.resourceIds[0]
             });
     
-            // Prepare the data for the API
             const appointmentDataToSend = {
                 Id: event.id,
-                ScheduleDate: scheduleDate.toISOString(),
+                ScheduleDate: moment(scheduleDate).toISOString(),
                 TreatmentTypeId: filteredTreatmentType.id,
                 EmployeeId: appointmentDetails.employeeId,
                 CustomerName: appointmentDetails.customerName,
                 ContactNo: appointmentDetails.contactNo,
-                FromTime: formatTimeForCSharp(newStart),
-                ToTime: formatTimeForCSharp(newEnd),
+                FromTime: moment(newStart).format('HH:mm:ss'),
+                ToTime: moment(newEnd).format('HH:mm:ss'),
                 EnteredBy: userId,
-                EnteredDate: new Date().toISOString(),
+                EnteredDate: moment().toISOString(),
                 TokenNo: appointmentDetails.tokenNo,
-                TokenIssueTime: new Date(appointmentDetails.tokenIssueTime).toISOString()
             };
     
             console.log('appointmentDataToSend', appointmentDataToSend);
-            // Send the data to the API
             const createdAppointment = await addAppointment(appointmentDataToSend);
+            setModalContent({ type: 'success', message: 'Appointment updated successfully!' });
+            setShowModal(true);
             console.log('Appointment created:', createdAppointment);
         } catch (error) {
             console.error('Failed to update appointment:', error);
+            setModalContent({ type: 'error', message: 'Failed to update appointment' });
+            setShowModal(true);
         }
     };
+    
+    
 
     function convertTimeToDateTime(timeStr, baseDate) {
         const [hours, minutes, seconds] = timeStr.split(':').map(Number);
@@ -586,7 +622,6 @@ function AppointmentScheduler() {
                 customerName: appointmentDetails.customerName,
                 contactNo: appointmentDetails.contactNo,
                 tokenNo: appointmentDetails.tokenNo,
-                tokenIssueTime: new Date(appointmentDetails.tokenIssueTime), // Handle '0001-01-01T00:00:00' if needed
                 resourceId: foundResource.id.toString()
             });
     
@@ -652,129 +687,136 @@ function AppointmentScheduler() {
                 editable={true}
             />
 
-            <Modal
-                isOpen={modalIsOpen}
-                onRequestClose={() => setIsConfirmModalOpen(false)}
-                className="Modal"
-                closeTimeoutMS={300}
-                overlayClassName="Overlay"
-                contentLabel="Create Appointment"
-            >
-                <div className="modal-dialog modal-lg">
-                    <div className="modal-content">
-                        <div className="modal-header">
-                            <div className="container-fluid">
-                                <div className="row">
-                                    <div className="col-10">
-                                        <h5 className="modal-title">Create Appointment at <span style={{color:'green', fontWeight:'bold'}}>{selectedResource.name || ''}</span></h5>
-                                    </div>
-                                    <div className="col-2 text-right">
-                                        <button type="button" className="close" onClick={closeModalByIcon}>
-                                            <span>&times;</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+<Modal
+    isOpen={modalIsOpen}
+    onRequestClose={() => setIsConfirmModalOpen(false)}
+    className="Modal custom-modal"
+    closeTimeoutMS={300}
+    overlayClassName="Overlay"
+    contentLabel="Create Appointment"
+>
+    <div className="modal-dialog modal-lg">
+        <div className="modal-content custom-modal-content">
+            <div className="modal-header custom-modal-header">
+                <div className="container-fluid">
+                    <div className="row">
+                        <div className="col-10">
+                            <h5 className="modal-title-appointment custom-modal-title-appointment">Create Appointment at <span style={{color:'green', fontWeight:'bold'}}>{selectedResource.name || ''}</span></h5>
                         </div>
-                        
-                        <NotificationComponent
-                                message={notification.message}
-                                type={notification.type}
-                                onClose={() => setNotification({ message: '', type: '' })}
-                            />
-                        <form onSubmit={handleSubmit} className="modal-appoinment-body modal-body">
-                            <div className="container-fluid">
-                                <div className="row">
-                                    <div className="col-md-12 form-group">
-                                        <label htmlFor="customerName">Customer Name <span className="text-danger">*</span></label>
-                                        <input 
-                                            className={`form-control ${formErrors.customerName ? 'is-invalid' : ''}`}
-                                            type="text" 
-                                            id="customerName" 
-                                            name="customerName" 
-                                            value={appointmentData.customerName} 
-                                            onChange={handleInputChange} required 
-                                        />
-                                    </div>
-                                </div>
-                                <div className="row">
-                                    <div className="col-md-12 form-group">
-                                        <label htmlFor="contactNo">Contact Number <span className="text-danger">*</span></label>
-                                        <input className={`form-control ${formErrors.contactNo ? 'is-invalid' : ''}`} type="text" id="contactNo" name="contactNo" value={appointmentData.contactNo} onChange={handleInputChange} required />
-                                    </div>
-                                </div>
-                                <div className="row">
-                                    <div className="col-md-6 form-group">
-                                        <label htmlFor="treatmentTypeId">Treatment Type <span className="text-danger">*</span></label>
-                                        <select className={`form-control ${formErrors.treatmentTypeId ? 'is-invalid' : ''}`} id="treatmentTypeId" name="treatmentTypeId" value={appointmentData.treatmentTypeId} onChange={handleInputChange} required>
-                                            <option value="" disabled>Select a Treatment Type</option>
-                                            {treatmentTypes.map(type => <option key={type.id} value={type.id}>{type.treatmentType.name}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="col-md-6 form-group">
-                                        <label htmlFor="scheduleDate">Schedule Date <span className="text-danger">*</span></label><br/>
-                                        <DatePicker className={`form-control ${formErrors.scheduleDate ? 'is-invalid' : ''}`} selected={appointmentData.scheduleDate} onChange={(date) => handleDateChange('scheduleDate', date)} dateFormat="MMMM d, yyyy" />
-                                    </div>
-                                </div>
-                                <div className='row'>
-                                    <div className="col-md-6 form-group">
-                                        <label htmlFor="startTime">Start Time <span className="text-danger">*</span></label><br/>
-                                        <DatePicker
-                                            className="form-control"
-                                            selected={startTime}
-                                            onChange={(date) => handleTimeChange(date, 'startTime')}
-                                            showTimeSelect
-                                            showTimeSelectOnly
-                                            timeIntervals={15}
-                                            timeCaption="Time"
-                                            dateFormat="h:mm aa"
-                                        />
-                                    </div>
-                                    <div className="col-md-6 form-group">
-                                        <label htmlFor="endTime">End Time <span className="text-danger">*</span></label><br/>
-                                        <DatePicker
-                                            className="form-control"
-                                            selected={endTime}
-                                            showTimeSelect
-                                            showTimeSelectOnly
-                                            timeIntervals={15}
-                                            timeCaption="Time"
-                                            dateFormat="h:mm aa"
-                                            disabled
-                                        />
-                                    </div>
-                                </div>
-                                <div className="row">
-                                    <div className="col-md-6 form-group">
-                                        <label htmlFor="employeeId">Employee <span className="text-danger">*</span></label>
-                                        <select className={`form-control ${formErrors.employeeId ? 'is-invalid' : ''}`} id="employeeId" name="employeeId" value={appointmentData.employeeId} onChange={handleInputChange} required>
-                                            <option value="" disabled>Select an Employee</option>
-                                            {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.fullName}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="col-md-6 form-group">
-                                        <label htmlFor="tokenNo">Token Number</label>
-                                        <input className="form-control" type="text" id="tokenNo" name="tokenNo" value={appointmentData.tokenNo} onChange={handleInputChange} />
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                        <div className="modal-footer">
-                            <div className="container-fluid">
-                                <div className="row">
-                                    <div className="col-6">
-                                        <button type="button" className="btn btn-danger w-100" onClick={closeModal}>Delete Appointment</button>
-                                    </div>
-                                    <div className="col-6">
-                                        <button onClick={handleSubmit} className="btn btn-primary w-100">Save Appointment</button>
-                                    </div>
-                                    {/* <button onClick={handleSubmit} className="btn btn-primary w-100">Test Save Appointment</button> */}
-                                </div>
-                            </div>
+                        <div className="col-2 text-right">
+                            <button type="button" className="close custom-close" onClick={closeModalByIcon}>
+                                <span>&times;</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div className='row'>
+                        <div className='col-md-4 col-sm-4'>
+                            <button onClick={openDayOffsModal} className="btn btn-warning">Day Offs</button>
+                        </div>
+                        <div className='col-md-4 col-sm-4'>
+                            <button onClick={openLeavesModal} className="btn btn-warning">Leaves</button>
+                        </div>
+                        <div className='col-md-4 col-sm-4'>
+                            <button onClick={openShiftsModal} className="btn btn-warning">Shifts</button>
                         </div>
                     </div>
                 </div>
-            </Modal>
+            </div>
+            
+            <NotificationComponent
+                message={notification.message}
+                type={notification.type}
+                onClose={() => setNotification({ message: '', type: '' })}
+            />
+            <form onSubmit={handleSubmit} className="modal-appoinment-body modal-body custom-modal-body">
+                <div className="container-fluid">
+                    <div className="row">
+                        <div className="col-md-12 form-group">
+                            <label htmlFor="customerName">Customer Name <span className="text-danger">*</span></label>
+                            <input 
+                                className={`form-control ${formErrors.customerName ? 'is-invalid' : ''}`}
+                                type="text" 
+                                id="customerName" 
+                                name="customerName" 
+                                value={appointmentData.customerName} 
+                                onChange={handleInputChange} required 
+                            />
+                        </div>
+                    </div>
+                    <div className="row">
+                        <div className="col-md-12 form-group">
+                            <label htmlFor="contactNo">Contact Number <span className="text-danger">*</span></label>
+                            <input className={`form-control ${formErrors.contactNo ? 'is-invalid' : ''}`} type="text" id="contactNo" name="contactNo" value={appointmentData.contactNo} onChange={handleInputChange} required />
+                        </div>
+                    </div>
+                    <div className="row">
+                        <div className="col-md-6 col-sm-6 form-group">
+                            <label htmlFor="treatmentTypeId">Treatment Type <span className="text-danger">*</span></label>
+                            <select className={`form-control ${formErrors.treatmentTypeId ? 'is-invalid' : ''}`} id="treatmentTypeId" name="treatmentTypeId" value={appointmentData.treatmentTypeId} onChange={handleInputChange} required>
+                                <option value="" disabled>Select a Treatment Type</option>
+                                {treatmentTypes.map(type => <option key={type.id} value={type.id}>{type.treatmentType.name}</option>)}
+                            </select>
+                        </div>
+                        <div className="col-md-6 col-sm-6 form-group">
+                            <label htmlFor="scheduleDate">Schedule Date <span className="text-danger">*</span></label><br/>
+                            <DatePicker className={`form-control ${formErrors.scheduleDate ? 'is-invalid' : ''}`} selected={appointmentData.scheduleDate} onChange={(date) => handleDateChange('scheduleDate', date)} dateFormat="MMMM d, yyyy" />
+                        </div>
+                    </div>
+                    <div className='row'>
+                        <div className="col-md-6 col-sm-6 form-group">
+                            <label htmlFor="startTime">Start Time <span className="text-danger">*</span></label><br/>
+                            <DatePicker
+                                className="form-control"
+                                selected={startTime}
+                                onChange={(date) => handleTimeChange(date, 'startTime')}
+                                showTimeSelect
+                                showTimeSelectOnly
+                                timeIntervals={15}
+                                timeCaption="Time"
+                                dateFormat="h:mm aa"
+                            />
+                        </div>
+                        <div className="col-md-6 col-sm-6 form-group">
+                            <label htmlFor="endTime">End Time <span className="text-danger">*</span></label><br/>
+                            <DatePicker
+                                className="form-control"
+                                selected={endTime}
+                                showTimeSelect
+                                showTimeSelectOnly
+                                timeIntervals={15}
+                                timeCaption="Time"
+                                dateFormat="h:mm aa"
+                                disabled
+                            />
+                        </div>
+                    </div>
+                    <div className="row">
+                        <div className="col-md-6 form-group">
+                            <label htmlFor="employeeId">Employee <span className="text-danger">*</span></label>
+                            <select className={`form-control ${formErrors.employeeId ? 'is-invalid' : ''}`} id="employeeId" name="employeeId" value={appointmentData.employeeId} onChange={handleInputChange} required>
+                                <option value="" disabled>Select an Employee</option>
+                                {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.fullName}</option>)}
+                            </select>
+                        </div>
+                        <div className="col-md-6 form-group">
+                            <label htmlFor="tokenNo">Token Number</label>
+                            <input className="form-control" type="text" id="tokenNo" name="tokenNo" value={appointmentData.tokenNo} onChange={handleInputChange} />
+                        </div>
+                    </div>
+                </div>
+            </form>
+            <div className="modal-footer custom-modal-footer row">
+                <div className="col-6 p-2">
+                    <button type="button" className="btn btn-danger custom-button" onClick={closeModal}>Delete</button>
+                </div>
+                <div className="col-6 p-2">
+                    <button onClick={handleSubmit} className="btn btn-primary custom-button">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</Modal>
+
             <ConfirmationModal
                 isOpen={isConfirmModalOpen}
                 onClose={() => setIsConfirmModalOpen(false)}
@@ -785,6 +827,23 @@ function AppointmentScheduler() {
                 onClose={closeModal}
                 type={modalContent.type}
                 message={modalContent.message}
+            />
+
+            {/* New Modals for Employee Day Offs and Employee Leaves */}
+            <EmployeeDayOffsModal
+                isOpen={isDayOffModalOpen}
+                onClose={() => setIsDayOffModalOpen(false)}
+                employees={dayOffsData}
+            />
+            <EmployeeLeavesModal
+                isOpen={isLeavesModalOpen}
+                onClose={() => setIsLeavesModalOpen(false)}
+                employees={leavesData}
+            />
+            <EmployeeShiftsModal
+                isOpen={isShiftsModalOpen}
+                onClose={() => setIsShiftsModalOpen(false)}
+                employees={shiftsData}
             />
         </div>
     );

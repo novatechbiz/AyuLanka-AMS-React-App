@@ -57,3 +57,14 @@
 .approve-loading {
     font-style: italic;
 }
+
+.approve-dayoff-header {
+    font-size: 24px;
+    color: #16A085; /* Dark slate color */
+    text-align: left;
+    padding: 10px 0;
+    border-bottom: 3px solid #BDC3C7; /* Light grey underline */
+    padding-top: 0px !important;
+}
+
+

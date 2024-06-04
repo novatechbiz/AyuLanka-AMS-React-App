@@ -57,3 +57,17 @@
 .approve-loading {
     font-style: italic;
 }
+
+.table-container {
+    max-height: 400px; /* Set the max height */
+    overflow-y: auto; /* Add scroll */
+}
+
+.approve-shift-header {
+    font-size: 24px;
+    color: #16A085; /* Dark slate color */
+    text-align: left;
+    padding: 10px 0;
+    border-bottom: 3px solid #BDC3C7; /* Light grey underline */
+    padding-top: 0px !important;
+}

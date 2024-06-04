@@ -17,7 +17,7 @@ import ApproveShift from "./components/approveShift/approveShift";
 
 const Layout = ({ children }) => {
   const location = useLocation();
-  const isLoginPage = location.pathname === "/login";
+  const isLoginPage = location.pathname === "/";
 
   return (
     <div className="app-container">
@@ -34,8 +34,8 @@ const Routers = () => {
     <Router>
       <Layout>
         <Routes>
-          <Route path="/" element={<User />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Login />} />
+          <Route path="/user" element={<User />} />
           <Route path="/apply-leave" element={<ApplyLeave />} />
           <Route path="/employee-roster" element={<EmployeeRoster />} />
           <Route path="/appoinment-schedular" element={<AppointmentScheduler />} />

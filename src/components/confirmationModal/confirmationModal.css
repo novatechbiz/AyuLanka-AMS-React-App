@@ -46,13 +46,13 @@
     cursor: pointer; /* Pointer cursor on hover */
     font-size: 1rem; /* Button text size */
     color: white; /* Text color for buttons */
-    background-color: #007bff; /* Blue background for confirm button */
+    background-color: green; /* Blue background for confirm button */
     flex: 1; /* Flex grow to fill space */
     transition: background-color 0.3s; /* Smooth transition for hover effect */
 }
 
 .confirmation-modal button:hover {
-    background-color: #0056b3; /* Darker blue on hover for confirm button */
+    background-color: green; /* Darker blue on hover for confirm button */
 }
 
 .confirmation-modal button.cancel {
