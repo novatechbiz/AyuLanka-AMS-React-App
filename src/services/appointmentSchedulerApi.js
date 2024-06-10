@@ -69,7 +69,8 @@ export const fetchAppointmentDetails = async (id) => {
 
 export const fetchEmployeeSchedule = async (id, scheduledate) => {
   try {
-      const response = await api.get(`/staffroster/employeeschedule/${id}/${scheduledate}`);
+      const encodedDate = encodeURIComponent(scheduledate);
+      const response = await api.get(`/staffroster/employeeschedule/${id}/${encodedDate}`);
       return response.data;  // Assuming the API returns the data or a clear message
   } catch (error) {
       if (error.response) {
@@ -77,7 +78,7 @@ export const fetchEmployeeSchedule = async (id, scheduledate) => {
           console.error("Error fetching schedule:", error.response.data);
           if (error.response.status === 404) {
               // Handle not found error specifically
-              alert(error.response.data); // or show a notification
+              alert(error.response.data); // Or show a notification
           }
       } else {
           // Handle errors in setting up the request or client side issues
