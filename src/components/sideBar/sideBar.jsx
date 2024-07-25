@@ -7,6 +7,7 @@ const Sidebar = () => {
   const [menuState, setMenuState] = useState({
     user: false,
     leaves: false,
+    attendance: false,
     roster: false,
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -43,6 +44,16 @@ const Sidebar = () => {
               <ul>
                 <li>
                   <Link to="/apply-leave">Create/Update/Delete Leaves</Link>
+                </li>
+              </ul>
+            )}
+          </li>
+          <li className={menuState.attendance ? 'active' : ''}>
+            <span onClick={() => toggleMenu('attendance')}>Attendance Upload</span>
+            {menuState.attendance && (
+              <ul>
+                <li>
+                  <Link to="/attendance-upload">Upload</Link>
                 </li>
               </ul>
             )}
