@@ -14,6 +14,7 @@ import ViewRoster from "./components/viewRoster/viewRoster";
 import ApproveDayOff from "./components/approveDayOff/approveDayOff";
 import ChangeShift from "./components/changeShift/changeShift";
 import ApproveShift from "./components/approveShift/approveShift";
+import ManageAttendance from "./components/attendance/manageAttendance";
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -37,6 +38,7 @@ const Routers = () => {
           <Route path="/" element={<Login />} />
           <Route path="/user" element={<User />} />
           <Route path="/apply-leave" element={<ApplyLeave />} />
+          <Route path="/attendance-upload" element={<ManageAttendance />} />
           <Route path="/employee-roster" element={<EmployeeRoster />} />
           <Route path="/appoinment-schedular" element={<AppointmentScheduler />} />
           <Route path="/update-roster" element={<UpdateRoster />} />

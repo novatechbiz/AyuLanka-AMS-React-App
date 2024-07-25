@@ -70,7 +70,7 @@ export const fetchAppointmentDetails = async (id) => {
 export const fetchEmployeeSchedule = async (id, scheduledate) => {
   try {
       const encodedDate = encodeURIComponent(scheduledate);
-      const response = await api.get(`/staffroster/employeeschedule/${id}/${encodedDate}`);
+      const response = await api.get(`/staffroster/employeeschedule/${id}?scheduledate=${encodedDate}`);
       return response.data;  // Assuming the API returns the data or a clear message
   } catch (error) {
       if (error.response) {
