@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { FaBars } from "react-icons/fa";
+import { FaBars, FaSignOutAlt  } from "react-icons/fa";
 import './sideBar.css';
 
 const Sidebar = () => {
@@ -11,6 +11,8 @@ const Sidebar = () => {
     roster: false,
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const designationCode = sessionStorage.getItem("designationCode");
 
   const toggleMenu = (menu) => {
     setMenuState(prevState => ({
@@ -27,7 +29,10 @@ const Sidebar = () => {
     <>
       <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <h2 className="sidebar-heading">Menu</h2>
+       
         <ul>
+        {designationCode === "SAD" || designationCode === "AD" ? (
+          <>
           <li className={menuState.user ? 'active' : ''}>
             <span onClick={() => toggleMenu('user')}>User</span>
             {menuState.user && (
@@ -68,31 +73,46 @@ const Sidebar = () => {
                 <li>
                   <Link to="/update-roster">Update Roster</Link>
                 </li>
+                {designationCode === "SAD" && (
                 <li>
                   <Link to="/approve-roster">Approve Roster</Link>
                 </li>
+                )}
                 <li>
                   <Link to="/view-roster">View Roster</Link>
                 </li>
                 <li>
                   <Link to="/change-dayoff">Change Day Off</Link>
                 </li>
+                {designationCode === "SAD" && (
                 <li>
                   <Link to="/approve-dayoff">Approve Change Day Off</Link>
                 </li>
+                )}
                 <li>
                   <Link to="/change-shift">Change Shift</Link>
                 </li>
+                {designationCode === "SAD" && (
                 <li>
                   <Link to="/approve-shift">Approve Change Shift</Link>
                 </li>
+                )}
               </ul>
             )}
           </li>
-          <li>
-            <Link to="/appoinment-schedular">Appointment Scheduler</Link>
-          </li>
+          </>
+          ): null}
+          {designationCode === "SAD" || designationCode === "AD" || designationCode === "RP" ? (
+            <li>
+              <Link to="/appoinment-schedular">Appointment Scheduler</Link>
+            </li>
+          ): null}
         </ul>
+        
+        {/* Logout text with icon on the right side of the menu */}
+        <div className="logout">
+          <FaSignOutAlt /> <Link to="/logout">Logout</Link>
+        </div>
       </div>
       <div className="sidebar-toggle" onClick={toggleSidebar}>
         <FaBars />

@@ -47,10 +47,11 @@ class login extends React.Component {
           const decoded = jwtDecode(response.token);
           console.log("Decoded JWT:", decoded);
 
-          if (decoded.userId && decoded.fullName && decoded.designationId) {
+          if (decoded.userId && decoded.fullName && decoded.designationCode) {
+            sessionStorage.setItem('exp', decoded.exp);
             sessionStorage.setItem('userId', decoded.userId);
             sessionStorage.setItem('fullName', decoded.fullName);
-            sessionStorage.setItem('designationId', decoded.designationId);
+            sessionStorage.setItem('designationCode', decoded.designationCode);
 
             this.setState({
               showSuccessToast: true,

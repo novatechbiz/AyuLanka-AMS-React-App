@@ -99,6 +99,26 @@
   width: 100%;
 }
 
+/* App.css */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1050;
+  padding: 10px 20px;
+  border-radius: 5px;
+  color: #fff;
+}
+
+.toast-error {
+  background-color: #d9534f;
+}
+
+.toast-success {
+  background-color: #5cb85c;
+}
+
+
 /* Responsive styles */
 @media (max-width: 768px) {
   .sidebar {
