@@ -3,14 +3,17 @@ import "./toastMessage.css"; // Add your custom CSS for the toast messages
 import { Toast } from "react-bootstrap";
 
 function ToastMessage({ show, onClose, type, message }) {
-  {
-    console.log(show + " " + type + " " + message);
-  }
+  console.log(`${show} ${type} ${message}`, onClose); // Improved logging
+
   return (
     <Toast
       show={show}
-      onClose={onClose}
-      delay={3000}
+      onClose={() => {
+        console.log("Closing Toast"); // Debugging
+        onClose(); // Call the passed onClose function
+      }}
+      delay={3000} // Automatically close after 3 seconds
+      autohide // Ensure it hides automatically after the delay
       className={`bg-${type} text-white ml-auto`}
     >
       <Toast.Body>
@@ -25,7 +28,7 @@ function ToastMessage({ show, onClose, type, message }) {
           <button
             type="button"
             className="btn-close"
-            onClick={onClose}
+            onClick={onClose} // Close toast when button is clicked
             aria-label="Close"
           ></button>
         </div>

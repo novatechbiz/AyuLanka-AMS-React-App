@@ -24,6 +24,7 @@ class ApplyLeave extends React.Component {
         noOfDays: "",
         fromDate: "",
         toDate: "",
+        halfDay: ""
       },
       successModalOpen: false,  // Initialize success modal state
       errorModalOpen: false,    // Initialize error modal state
@@ -134,6 +135,7 @@ class ApplyLeave extends React.Component {
               noOfDays: "",
               fromDate: "",
               toDate: "",
+              halfDay: "",
             },
             isEditing: false,
             submitAttempted: false,
@@ -154,6 +156,7 @@ class ApplyLeave extends React.Component {
                 noOfDays: "",
                 fromDate: "",
                 toDate: "",
+                halfDay: "",
               },
               submitAttempted: false,
             }));
@@ -170,7 +173,7 @@ class ApplyLeave extends React.Component {
   };
 
   validateForm = (leave) => {
-    const isValid = leave.employeeId && leave.leaveTypeId && leave.noOfDays && leave.fromDate && leave.toDate;
+    const isValid = leave.employeeId && leave.leaveTypeId && leave.noOfDays && leave.fromDate && leave.toDate && (leave.noOfDays !== "0.5" || leave.halfDay);
     console.log("Form validation status:", isValid);
     return isValid;
   };
@@ -182,7 +185,7 @@ class ApplyLeave extends React.Component {
 
   render() {
     const { currentLeave, submitAttempted, confirmModalOpen } = this.state;
-
+    console.log('currentLeave', currentLeave)
     // Helper function to check if the field should show an error border
     const shouldShowError = (field) => {
       const isEmpty = !currentLeave[field];
@@ -242,6 +245,26 @@ class ApplyLeave extends React.Component {
                   placeholder="Number of Days"
                 />
               </div>
+              {/* Half-Day Selection */}
+              {(currentLeave.noOfDays === 0.5 || currentLeave.noOfDays === "0.5") && (
+                <div className="form-group">
+                  <label htmlFor="halfDay">
+                    Select Half Day <span className="required-star">*</span>
+                  </label>
+                  <select
+                    className={`form-control ${
+                      shouldShowError("halfDay") ? "error-border" : ""
+                    }`}
+                    name="halfDay"
+                    value={currentLeave.halfDay}
+                    onChange={this.handleInputChange}
+                  >
+                    <option value="">Select Time</option>
+                    <option value="1">Morning</option>
+                    <option value="2">Evening</option>
+                  </select>
+                </div>
+              )}
               <div className="form-group">
                 <label htmlFor="fromDate">From Date <span className="required-star">*</span></label>
                 <input
