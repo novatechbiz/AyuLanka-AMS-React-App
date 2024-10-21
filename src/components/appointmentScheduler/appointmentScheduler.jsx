@@ -144,7 +144,7 @@ function AppointmentScheduler() {
                 end: end,
                 resourceId: appointment.appointmentTreatments[0].treatmentLocation.locationId.toString(),
                 employeeId: appointment.employeeId,
-                backgroundColor: getBackgroundColor(appointment.employeeId),
+                backgroundColor: getBackgroundColor(appointment.employeeId, appointment.tokenNo),
                 extendedProps: {
                     contactNo: appointment.contactNo,
                     tokenNo: appointment.tokenNo,
@@ -260,11 +260,15 @@ function AppointmentScheduler() {
         setFormErrors(prevErrors => ({ ...prevErrors, scheduleDate: !date }));
     };
 
-    const getBackgroundColor = (employeeId) => {
-        if (employeeId === null) {
-            return '#707070'; // Color when tokenNo is null
+    const getBackgroundColor = (employeeId, tokenNo) => {
+        if (employeeId == null && tokenNo == null) {
+            return '#707070';
+        } else if(employeeId == null && tokenNo != null) {
+            return '#ee0d0d';
+        } else if(employeeId != null && tokenNo == null) {
+            return '#ffc107';
         } else {
-            return '#339a32'; // Color when tokenNo is not null (you can change this to whatever color you need)
+            return '#28a745';
         }
     };
     
@@ -556,7 +560,7 @@ function AppointmentScheduler() {
                 startTime: newStart,
                 endTime: newEnd,
                 //treatmentTypeId: appointmentDetails.treatmentTypeId.toString(),
-                employeeId: appointmentDetails.employeeId.toString(),
+                employeeId: appointmentDetails.employeeId ? appointmentDetails.employeeId.toString() : 0,
                 customerName: appointmentDetails.customerName,
                 contactNo: appointmentDetails.contactNo,
                 tokenNo: appointmentDetails.tokenNo,
@@ -651,7 +655,7 @@ function AppointmentScheduler() {
             <>
                 <div className='row'>
                     <div className='col-md-10'>
-                        <b>Customer Name: {eventInfo.event.title}</b>
+                        <b>{eventInfo.event.title}</b>
                     </div>
                     <div className='col-md-2'>
                         {eventInfo.event.extendedProps.tokenNo && (
@@ -663,24 +667,17 @@ function AppointmentScheduler() {
                 </div>
                 <div className='row'>
                     <div className='col-md-12'>
-                        {eventInfo.event.extendedProps.contactNo && (
-                            <div><b>Contact No: {eventInfo.event.extendedProps.contactNo}</b></div>
+                        {eventInfo.event.extendedProps.treatmentTypes && (
+                            <div><i>{eventInfo.event.extendedProps.treatmentTypes}</i></div>
                         )}
                     </div>
                 </div>
                 <div className='row'>
                     <div className='col-md-12'>
                         {eventInfo.event.extendedProps.employeeName && (
-                            <div><b>Employee: {eventInfo.event.extendedProps.employeeName}</b></div>
+                            <div><b>{eventInfo.event.extendedProps.employeeName}</b></div>
                         )}
 
-                    </div>
-                </div><br/><br/>
-                <div className='row'>
-                    <div className='col-md-12'>
-                        {eventInfo.event.extendedProps.treatmentTypes && (
-                            <div><i>Treatments: {eventInfo.event.extendedProps.treatmentTypes}</i></div>
-                        )}
                     </div>
                 </div>
 

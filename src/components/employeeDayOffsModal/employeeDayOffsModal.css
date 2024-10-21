@@ -1,5 +1,7 @@
 .appointment-refer-detail-modal {
     padding: 2%;
+    max-height: 800px;
+    overflow-y: scroll;
 }
 
 .appointment-refer-detail-header {
