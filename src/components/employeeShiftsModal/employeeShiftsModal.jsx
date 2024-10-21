@@ -10,7 +10,7 @@ export const EmployeeShiftsModal = ({ isOpen, onClose, employees }) => {
             className="Modal appointment-refer-detail-modal"
             overlayClassName="Overlay"
         >
-            <h2 className='appointment-refer-detail-header'>Employee Day Offs</h2>
+            <h2 className='appointment-refer-detail-header'>Employee Shifts</h2>
             <table className="table table-bordered">
                 <thead>
                     <tr>
