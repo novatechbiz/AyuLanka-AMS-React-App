@@ -3,8 +3,8 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    max-width: 500px; /* Reduced width for better appearance */
-    width: 90%; /* Responsive width, adjusted for smaller screens */
+    max-width: 800px; /* Reduced width for better appearance */
+    width: 100%; /* Responsive width, adjusted for smaller screens */
     background: white;
     border-radius: 5px;
     overflow: hidden;
@@ -32,6 +32,8 @@
 
 .modal-content {
     padding: 10px;
+    max-height: 650px;
+    overflow-y: scroll;
 }
 
 .modal-header {

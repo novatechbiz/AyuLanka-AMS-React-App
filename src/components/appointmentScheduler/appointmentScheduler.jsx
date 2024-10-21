@@ -16,6 +16,8 @@ import moment from 'moment';
 import { EmployeeDayOffsModal } from '../employeeDayOffsModal/employeeDayOffsModal.jsx';
 import { EmployeeLeavesModal } from '../employeeLeavesModal/employeeLeavesModal.jsx';
 import { EmployeeShiftsModal } from '../employeeShiftsModal/employeeShiftsModal.jsx';
+import StarIcon from '@mui/icons-material/Star';
+import { Autocomplete, TextField } from '@mui/material';
 
 Modal.setAppElement('#root');
 
@@ -28,13 +30,15 @@ function AppointmentScheduler() {
     const [modalContent, setModalContent] = useState({type: '', message: ''});
     const [appointmentData, setAppointmentData] = useState({
         scheduleDate: new Date(),
-        treatmentTypeId: '',
         employeeId: '',
         customerName: '',
         contactNo: '',
         tokenNo: '',
         tokenIssueTime: new Date(),
-        resourceId: ''
+        resourceId: '',
+        remarks: '',
+        treatmentTypeId: [], // Store selected treatment type IDs as an array
+        appoinmentTreatments: [], // Initialize appoinmentTreatments as an empty array
     });
     const [employees, setEmployees] = useState([]);
     const [treatmentTypes, setTreatmentTypes] = useState([]);
@@ -45,7 +49,7 @@ function AppointmentScheduler() {
         customerName: false,
         contactNo: false,
         treatmentTypeId: false,
-        employeeId: false,
+        // employeeId: false,
         scheduleDate: false
     });
 
@@ -125,19 +129,27 @@ function AppointmentScheduler() {
             const end = new Date(endDateTime);
     
             console.log("appointment.treatmentTypeId", appointment);      // Log the parsed end date
+
+                // Get all treatment types and join them with commas
+            const treatmentTypes = appointment.appointmentTreatments
+            .map(treatment => treatment.treatmentLocation.treatmentType.name)
+            .join(', ');
+
+            console.log("treatmentTypes", treatmentTypes);    
     
             return {
                 id: appointment.id,
-                title: `${appointment.customerName} - ${appointment.treatmentLocation.treatmentType.name}`,
+                title: `${appointment.customerName}`,
                 start: start,
                 end: end,
-                resourceId: appointment.treatmentLocation.location.id.toString(),
+                resourceId: appointment.appointmentTreatments[0].treatmentLocation.locationId.toString(),
                 employeeId: appointment.employeeId,
-                backgroundColor: getBackgroundColor(appointment.treatmentLocation.treatmentType.id.toString()),
+                backgroundColor: getBackgroundColor(appointment.employeeId),
                 extendedProps: {
                     contactNo: appointment.contactNo,
                     tokenNo: appointment.tokenNo,
-                    employeeName: appointment.employee.fullName,
+                    employeeName: appointment.employee ? appointment.employee.fullName : "", // Add employee name
+                    treatmentTypes: treatmentTypes  // Add treatment types joined by commas
                 }
             };
         });
@@ -154,40 +166,108 @@ function AppointmentScheduler() {
             ...prevState,
             [name]: value
         }));
+    };
+
+    // Handler for multiple treatment type selection
+    // const handleMultipleTreatmentTypeChange = (event) => {
+    //     const selectedOptions = Array.from(event.target.selectedOptions, option => option.value);
     
-        // Check if the treatment type has changed and there's already a start time set
-        if (name === 'treatmentTypeId' && appointmentData.startTime) {
-            const selectedTreatment = treatmentTypes.find(t => t.id.toString() === value);
-            console.log(`Dropdown changed: ${name} = ${value}`);  // Debugging line
-            if (selectedTreatment && selectedTreatment.treatmentType.durationHours) {
-                // Calculate new end time based on the duration of the new treatment type
-                const durationMilliseconds = selectedTreatment.treatmentType.durationHours * 3600000;
-                const newEndTime = new Date(appointmentData.startTime.getTime() + durationMilliseconds);
-                setEndTime(newEndTime);
+    //     // Set the selected treatment type IDs in state
+    //     setAppointmentData(prevState => ({
+    //         ...prevState,
+    //         treatmentTypeId: selectedOptions
+    //     }));
+
+    //     // Check if there's already a start time set
+    //     if (appointmentData.startTime) {
+    //         let totalDurationMilliseconds = 0; // Initialize total duration for multiple treatments
+
+    //         selectedOptions.forEach(option => {
+    //             const selectedTreatment = treatmentTypes.find(t => t.id.toString() === option);
+    //             console.log(`Dropdown changed: treatmentTypeId = ${selectedTreatment}`);  // Debugging line
+                
+    //             if (selectedTreatment) {
+    //                 let durationMilliseconds;
+    //                 if (selectedTreatment.treatmentType.durationHours) {
+    //                     // Calculate duration for the current treatment type
+    //                     durationMilliseconds = (selectedTreatment.treatmentType.durationHours * 3600 + 
+    //                                             (selectedTreatment.treatmentType.durationMinutes || 0) * 60) * 1000;
+                        
+    //                     totalDurationMilliseconds += durationMilliseconds; // Accumulate total duration
+    //                 }
+    //             }
+    //         });
+
+    //         // Calculate new end time based on the total duration
+    //         const newEndTime = new Date(appointmentData.startTime.getTime() + totalDurationMilliseconds);
+    //         setEndTime(newEndTime);
+
+    //         // Update endTime in appointmentData state
+    //         setAppointmentData(prevState => ({
+    //             ...prevState,
+    //             endTime: newEndTime
+    //         }));
+    //     }
+    // };
     
-                // Update endTime in appointmentData state
-                setAppointmentData(prevState => ({
-                    ...prevState,
-                    endTime: newEndTime
-                }));
-            }
+    // Handler for multiple treatment type selection
+    const handleMultipleTreatmentTypeChange = (event, value) => {
+        // Debugging logs
+        console.log('Selected Value:', value);
+        
+        // Ensure value is an array
+        if (!Array.isArray(value)) {
+            console.error("No selected options found");
+            return;
+        }
+    
+        const selectedIds = value.map(option => option.id); // Get IDs from selected options
+        console.log('Selected IDs:', selectedIds); // Debugging line
+    
+        // Update appointmentData state with selected IDs
+        setAppointmentData(prevState => ({
+            ...prevState,
+            treatmentTypeId: selectedIds
+        }));
+    
+        // Proceed with the rest of your logic if needed
+        if (appointmentData.startTime && selectedIds.length > 0) {
+            let totalDurationMilliseconds = 0;
+    
+            selectedIds.forEach(id => {
+                const selectedTreatment = treatmentTypes.find(t => t.id == id);
+                if (selectedTreatment) {
+                    let durationMilliseconds = (selectedTreatment.treatmentType.durationHours * 3600 + 
+                                                (selectedTreatment.treatmentType.durationMinutes || 0) * 60) * 1000;
+                    totalDurationMilliseconds += durationMilliseconds; // Accumulate total duration
+                }
+            });
+    
+            const newEndTime = new Date(appointmentData.startTime.getTime() + totalDurationMilliseconds);
+            setEndTime(newEndTime);
+    
+            setAppointmentData(prevState => ({
+                ...prevState,
+                endTime: newEndTime
+            }));
         }
     };
     
+
 
     const handleDateChange = (name, date) => {
         setAppointmentData({ ...appointmentData, [name]: date });
         setFormErrors(prevErrors => ({ ...prevErrors, scheduleDate: !date }));
     };
 
-    const getBackgroundColor = (treatmentTypeId) => {
-        switch(treatmentTypeId) {
-            case '1': return '#e63168'; // Full Body
-            case '2': return '#53c669'; // Hair
-            case '4': return '#007bff'; // Treatment 03
-            default: return '#d743de';
+    const getBackgroundColor = (employeeId) => {
+        if (employeeId === null) {
+            return '#707070'; // Color when tokenNo is null
+        } else {
+            return '#339a32'; // Color when tokenNo is not null (you can change this to whatever color you need)
         }
-    }
+    };
+    
 
     function formatTimeForCSharp(date) {
         const hours = date.getHours().toString().padStart(2, '0');
@@ -239,7 +319,7 @@ function AppointmentScheduler() {
             customerName: !appointmentData.customerName,
             contactNo: !appointmentData.contactNo,
             treatmentTypeId: !appointmentData.treatmentTypeId,
-            employeeId: !appointmentData.employeeId,
+            // employeeId: !appointmentData.employeeId,
             scheduleDate: !appointmentData.scheduleDate
         };
 
@@ -251,12 +331,16 @@ function AppointmentScheduler() {
             return;
         }
 
-        // Find the selected treatment type and employee
-        const selectedTreatment = treatmentTypes.find(type => type.id.toString() === appointmentData.treatmentTypeId);
+
+
+        if(appointmentData.employeeId) {
+        
+        // Find the selected employee
+        // const selectedTreatment = treatmentTypes.find(type => type.id.toString() === appointmentData.treatmentTypeId);
         const selectedEmployee = employees.find(emp => emp.id.toString() === appointmentData.employeeId);
 
-        if (!selectedTreatment || !selectedEmployee) {
-            setNotification({ message: "Selected treatment type or employee is invalid.", type: 'error' });
+        if (!selectedEmployee) {
+            setNotification({ message: "Selected employee is invalid.", type: 'error' });
             return;
         }
 
@@ -285,7 +369,7 @@ function AppointmentScheduler() {
         const employeeSchedule = await fetchEmployeeSchedule(selectedEmployee.id, scheduleDate);
 
         if (!employeeSchedule) {
-            setNotification({ message: `The selected employee is on leave or has a day off on the selected date.`, type: 'error' });
+            setNotification({ message: `The selected employee is not available on the selected date.`, type: 'error' });
             return;
         }
 
@@ -303,21 +387,31 @@ function AppointmentScheduler() {
             setNotification({ message: `The appointment time does not align with the ${selectedEmployee.fullName}'s working hours. Shift of the selected employee is ${employeeSchedule.shiftMaster.fromTime} - ${employeeSchedule.shiftMaster.toTime}`, type: 'error' });
             return;
         }
+        }
+        
 
         const userId = sessionStorage.getItem('userId');
+
+        // Map treatment type IDs to AppoinmentTreatmentRequestModel
+        const treatmentModels = appointmentData.treatmentTypeId.map(treatmentTypeId => ({
+            Id: 0, // Assuming new appointment (you can set as needed)
+            AppoinmentId: null, // Since it's a new appointment
+            TreatmentTypeId: parseInt(treatmentTypeId, 10) // Convert to integer
+        }));
 
         const appointmentDataToSend = {
             Id: appointmentData.id != 0 ? appointmentData.id : 0,
             ScheduleDate: appointmentData.scheduleDate,
-            TreatmentTypeId: appointmentData.treatmentTypeId,
-            EmployeeId: appointmentData.employeeId,
+            EmployeeId: appointmentData.employeeId ? appointmentData.employeeId : 0,
             CustomerName: appointmentData.customerName,
             ContactNo: appointmentData.contactNo,
-            FromTime: formatTimeForCSharp(appointmentData.startTime),
+            FromTime: formatTimeForCSharp(appointmentData.startTime), 
             ToTime: formatTimeForCSharp(appointmentData.endTime),
             EnteredBy: userId,
             EnteredDate: new Date().toISOString(),
-            TokenNo: appointmentData.tokenNo
+            TokenNo: appointmentData.tokenNo,
+            Remarks: appointmentData.remarks,
+            appoinmentTreatments: treatmentModels
         };
 
         console.log('appointmentDataToSend', appointmentDataToSend);
@@ -363,7 +457,8 @@ function AppointmentScheduler() {
             contactNo: '',
             tokenNo: '',
             tokenIssueTime: new Date(),
-            resourceId: ''
+            resourceId: '',
+            remarks: ''
         });
         setFormErrors({});
     };
@@ -381,58 +476,62 @@ function AppointmentScheduler() {
     
             const treatmentTypesbyLocations = await fetchTreatmentTypesByLocation();
     
-            const filteredTreatmentType = treatmentTypesbyLocations.find(item => {
-                return item.locationId === parseInt(event._def.resourceIds[0], 10) &&
-                    item.treatmentTypeId === parseInt(appointmentDetails.treatmentLocation.treatmentTypeId, 10);
-            });
+            // const filteredTreatmentType = treatmentTypesbyLocations.find(item => {
+            //     return item.locationId === parseInt(event._def.resourceIds[0], 10) &&
+            //         item.treatmentTypeId === parseInt(appointmentDetails.treatmentLocation.treatmentTypeId, 10);
+            // });
     
-            const treatmentTypesNew = treatmentTypesbyLocations.filter(item => item.locationId === parseInt(event._def.resourceIds[0]));
-            const selectedTreatment = treatmentTypesNew.find(type => type.treatmentTypeId.toString() === appointmentDetails.treatmentLocation.treatmentTypeId.toString());
-            const selectedEmployee = employees.find(emp => emp.id.toString() === appointmentDetails.employeeId.toString());
-    
-            if (!selectedTreatment || !selectedEmployee) {
-                setNotification({ message: "Selected treatment type or employee is invalid.", type: 'error' });
-                return;
-            }
-    
-            const isOverlap = currentEvents.some(event => {
-                if (event.id.toString() === appointmentDetails.id.toString()) return false;
-                const eventEmployeeId = event.employeeId;
-                const eventStart = moment(event.start).toDate();
-                const eventEnd = moment(event.end).toDate();
-                const isStartWithinEvent = newStart >= eventStart && newStart < eventEnd;
-                const isEndWithinEvent = newEnd > eventStart && newEnd <= eventEnd;
-                const isEventWithinNew = eventStart >= newStart && eventEnd <= newEnd;
-    
-                return eventEmployeeId === selectedEmployee.id && (isStartWithinEvent || isEndWithinEvent || isEventWithinNew);
-            });
-    
-            if (isOverlap) {
-                setNotification({ message: `The employee ${selectedEmployee.fullName} is already assigned to another appointment during this time.`, type: 'error' });
-                return;
-            }
-    
+            
             const scheduleDate = moment(newStart).toDate();
             console.log('Schedule Date:', scheduleDate);
-            const employeeSchedule = await fetchEmployeeSchedule(selectedEmployee.id, scheduleDate);
-    
-            if (!employeeSchedule) {
-                setNotification({ message: `The selected employee is on leave or has a day off on the selected date.`, type: 'error' });
-                return;
+
+            if(appointmentDetails.employeeId) {
+                const treatmentTypesNew = treatmentTypesbyLocations.filter(item => item.locationId === parseInt(event._def.resourceIds[0]));
+                const selectedTreatment = treatmentTypesNew.find(type => type.treatmentTypeId.toString() === appointmentDetails.treatmentLocation.treatmentTypeId.toString());
+                const selectedEmployee = employees.find(emp => emp.id.toString() === appointmentDetails.employeeId.toString());
+        
+                if (!selectedTreatment || !selectedEmployee) {
+                    setNotification({ message: "Selected treatment type or employee is invalid.", type: 'error' });
+                    return;
+                }
+        
+                const isOverlap = currentEvents.some(event => {
+                    if (event.id.toString() === appointmentDetails.id.toString()) return false;
+                    const eventEmployeeId = event.employeeId;
+                    const eventStart = moment(event.start).toDate();
+                    const eventEnd = moment(event.end).toDate();
+                    const isStartWithinEvent = newStart >= eventStart && newStart < eventEnd;
+                    const isEndWithinEvent = newEnd > eventStart && newEnd <= eventEnd;
+                    const isEventWithinNew = eventStart >= newStart && eventEnd <= newEnd;
+        
+                    return eventEmployeeId === selectedEmployee.id && (isStartWithinEvent || isEndWithinEvent || isEventWithinNew);
+                });
+        
+                if (isOverlap) {
+                    setNotification({ message: `The employee ${selectedEmployee.fullName} is already assigned to another appointment during this time.`, type: 'error' });
+                    return;
+                }
+        
+                const employeeSchedule = await fetchEmployeeSchedule(selectedEmployee.id, scheduleDate);
+        
+                if (!employeeSchedule) {
+                    setNotification({ message: `The selected employee is not available on the selected date.`, type: 'error' });
+                    return;
+                }
+        
+                const convertedFromShift = convertTimeToDateTime(employeeSchedule.shiftMaster.fromTime, newStart);
+                const convertedToShift = convertTimeToDateTime(employeeSchedule.shiftMaster.toTime, newStart);
+        
+                console.log('Converted From Shift:', convertedFromShift);
+                console.log('Converted To Shift:', convertedToShift);
+        
+                const isValid = isWithinWorkHours(newStart, newEnd, convertedFromShift, convertedToShift);
+                if (!isValid) {
+                    setNotification({ message: `The appointment time does not align with the ${selectedEmployee.fullName}'s working hours. Shift of the selected employee is ${employeeSchedule.shiftMaster.fromTime} - ${employeeSchedule.shiftMaster.toTime}`, type: 'error' });
+                    return;
+                }
             }
-    
-            const convertedFromShift = convertTimeToDateTime(employeeSchedule.shiftMaster.fromTime, newStart);
-            const convertedToShift = convertTimeToDateTime(employeeSchedule.shiftMaster.toTime, newStart);
-    
-            console.log('Converted From Shift:', convertedFromShift);
-            console.log('Converted To Shift:', convertedToShift);
-    
-            const isValid = isWithinWorkHours(newStart, newEnd, convertedFromShift, convertedToShift);
-            if (!isValid) {
-                setNotification({ message: `The appointment time does not align with the ${selectedEmployee.fullName}'s working hours. Shift of the selected employee is ${employeeSchedule.shiftMaster.fromTime} - ${employeeSchedule.shiftMaster.toTime}`, type: 'error' });
-                return;
-            }
-    
+            
             const userId = sessionStorage.getItem('userId');
     
             const updatedEvents = currentEvents.map(ev => {
@@ -443,24 +542,33 @@ function AppointmentScheduler() {
             });
     
             setCurrentEvents(updatedEvents);
+
+            // Map treatment type IDs to AppoinmentTreatmentRequestModel
+            const treatmentModels = appointmentData.treatmentTypeId.map(treatmentTypeId => ({
+                Id: 0, // Assuming new appointment (you can set as needed)
+                AppoinmentId: null, // Since it's a new appointment
+                TreatmentTypeId: parseInt(treatmentTypeId, 10) // Convert to integer
+            }));
     
             setAppointmentData({
                 id: event.id,
                 scheduleDate: scheduleDate,
                 startTime: newStart,
                 endTime: newEnd,
-                treatmentTypeId: appointmentDetails.treatmentTypeId.toString(),
+                //treatmentTypeId: appointmentDetails.treatmentTypeId.toString(),
                 employeeId: appointmentDetails.employeeId.toString(),
                 customerName: appointmentDetails.customerName,
                 contactNo: appointmentDetails.contactNo,
                 tokenNo: appointmentDetails.tokenNo,
-                resourceId: event._def.resourceIds[0]
+                resourceId: event._def.resourceIds[0],
+                remarks: appointmentDetails.remarks,
+                appoinmentTreatments: treatmentModels
             });
     
             const appointmentDataToSend = {
                 Id: event.id,
                 ScheduleDate: moment(scheduleDate).toISOString(),
-                TreatmentTypeId: filteredTreatmentType.id,
+                //TreatmentTypeId: filteredTreatmentType.id,
                 EmployeeId: appointmentDetails.employeeId,
                 CustomerName: appointmentDetails.customerName,
                 ContactNo: appointmentDetails.contactNo,
@@ -469,13 +577,15 @@ function AppointmentScheduler() {
                 EnteredBy: userId,
                 EnteredDate: moment().toISOString(),
                 TokenNo: appointmentDetails.tokenNo,
+                Remarks: appointmentDetails.remarks,
+                AppoinmentTreatments: treatmentModels
             };
     
             console.log('appointmentDataToSend', appointmentDataToSend);
-            const createdAppointment = await addAppointment(appointmentDataToSend);
+            //const createdAppointment = await addAppointment(appointmentDataToSend);
             setModalContent({ type: 'success', message: 'Appointment updated successfully!' });
             setShowModal(true);
-            console.log('Appointment created:', createdAppointment);
+            //console.log('Appointment created:', createdAppointment);
         } catch (error) {
             console.error('Failed to update appointment:', error);
             setModalContent({ type: 'error', message: 'Failed to update appointment' });
@@ -539,12 +649,41 @@ function AppointmentScheduler() {
     function renderEventContent(eventInfo) {
         return (
             <>
-                <div>
-                    <strong>{eventInfo.event.title}</strong> {/* Main title */}
+                <div className='row'>
+                    <div className='col-md-10'>
+                        <b>Customer Name: {eventInfo.event.title}</b>
+                    </div>
+                    <div className='col-md-2'>
+                        {eventInfo.event.extendedProps.tokenNo && (
+                            <div style={{ textAlign: 'right' }}>
+                                <StarIcon style={{ color: '#ffd700' }} />
+                            </div>
+                        )}
+                    </div>
                 </div>
-                <div style={{fontSize: '1.00em', opacity: 1}}>
-                    {eventInfo.event.extendedProps.employeeName} {/* Employee name */}
+                <div className='row'>
+                    <div className='col-md-12'>
+                        {eventInfo.event.extendedProps.contactNo && (
+                            <div><b>Contact No: {eventInfo.event.extendedProps.contactNo}</b></div>
+                        )}
+                    </div>
                 </div>
+                <div className='row'>
+                    <div className='col-md-12'>
+                        {eventInfo.event.extendedProps.employeeName && (
+                            <div><b>Employee: {eventInfo.event.extendedProps.employeeName}</b></div>
+                        )}
+
+                    </div>
+                </div><br/><br/>
+                <div className='row'>
+                    <div className='col-md-12'>
+                        {eventInfo.event.extendedProps.treatmentTypes && (
+                            <div><i>Treatments: {eventInfo.event.extendedProps.treatmentTypes}</i></div>
+                        )}
+                    </div>
+                </div>
+
             </>
         );
     }
@@ -553,40 +692,71 @@ function AppointmentScheduler() {
     const [endTime, setEndTime] = useState(new Date());
 
     const handleTimeChange = (date, name) => {
-        console.log(appointmentData.treatmentTypeId)
+        console.log('treatmentTypes', treatmentTypes);
+        
         if (name === 'startTime') {
             setStartTime(date);
-            if (appointmentData.treatmentTypeId) {
-                const selectedTreatment = treatmentTypes.find(t => t.id.toString() === appointmentData.treatmentTypeId);
-                console.log(selectedTreatment)
-                if (selectedTreatment && selectedTreatment.treatmentType.durationHours) {
-                    const durationMilliseconds = selectedTreatment.treatmentType.durationHours * 3600000; // Convert hours to milliseconds
-                    const newEndTime = new Date(date.getTime() + durationMilliseconds);
-                    setEndTime(newEndTime);
-                    console.log('newEndTime', newEndTime)
-
-                    setAppointmentData(prevState => ({
-                        ...prevState,
-                        startTime: date, // Assuming you have startTime in your state
-                        endTime: newEndTime // Assuming you have endTime in your state
-                    }));
+    
+            let totalDurationMilliseconds = 0; // Initialize total duration for multiple treatments
+    
+            // Iterate over the selected treatment type IDs
+            appointmentData.treatmentTypeId.forEach(option => {
+                // Find the treatment that matches the selected treatmentTypeId inside the treatmentType object
+                const selectedTreatment = treatmentTypes.find(t => t.id == option);
+                console.log(`Dropdown changed: treatmentTypeId = ${option}, selectedTreatment = `, selectedTreatment);  // Debugging line
+                
+                if (selectedTreatment) {
+                    let durationMilliseconds = 0;
+    
+                    const { durationHours, durationMinutes } = selectedTreatment.treatmentType; // Destructure duration fields
+                    
+                    if (durationHours || durationMinutes) {
+                        // Calculate duration in milliseconds
+                        durationMilliseconds = (durationHours * 3600 + (durationMinutes || 0) * 60) * 1000;
+    
+                        // Accumulate total duration
+                        totalDurationMilliseconds += durationMilliseconds;
+                    }
                 }
-            }
+            });
+    
+            // Calculate new end time based on the total duration
+            const newEndTime = new Date(date.getTime() + totalDurationMilliseconds);
+            setEndTime(newEndTime);
+    
+            // Update the appointmentData state with the new startTime and calculated endTime
+            setAppointmentData(prevState => ({
+                ...prevState,
+                startTime: date,
+                endTime: newEndTime
+            }));
+        }
+
+        if (name === 'endTime') {
+            setEndTime(date);
+            // Update the appointmentData state with the new startTime and calculated endTime
+            setAppointmentData(prevState => ({
+                ...prevState,
+                endTime: date
+            }));
         }
     };
     
+    
+
+    useEffect(() => {
+        console.log("appointment dataaaaaaaa:", appointmentData);
+    }, [appointmentData]);
+    
 
     const handleEventClick = async (clickInfo) => {
-        console.log(clickInfo);
         const { event } = clickInfo;
     
         try {
-            console.log("Event ID:", event.id);
             setSelectedEventId(event.id);
     
             // Simulate fetching details, replace this with your actual fetch call
             const appointmentDetails = await fetchAppointmentDetails(event.id);
-            console.log("Fetched Appointment Details:", appointmentDetails);
     
             if (!appointmentDetails.scheduleDate) {
                 setNotification({ message: `Schedule date is missing in the appointment details.`, type: 'error' });           
@@ -598,7 +768,7 @@ function AppointmentScheduler() {
             const endTime = new Date(`${appointmentDetails.scheduleDate.split('T')[0]}T${appointmentDetails.toTime}`);
     
             // Make sure the selected resource exists in your state before setting it
-            const foundResource = resources.find(r => r.id === appointmentDetails.treatmentLocation.locationId);
+            const foundResource = resources.find(r => r.id === appointmentDetails.appointmentTreatments[0].treatmentLocation.locationId);
             if (!foundResource) {
                 setNotification({ message: `Selected resource not found.`, type: 'error' });
                 console.error("Selected resource not found.");
@@ -608,21 +778,31 @@ function AppointmentScheduler() {
             setSelectedResource(foundResource);
 
             const treatmentTypesbyLocations = await fetchTreatmentTypesByLocation();
-    
             const treatmentTypes = treatmentTypesbyLocations.filter(item => item.locationId === foundResource.id);
             setTreatmentTypes(treatmentTypes);
+
+            const treatmentTypeIds = appointmentDetails.appointmentTreatments.map(treatment => treatment.treatmentTypeId);
+
+            // Ensure appointment treatments are mapped correctly
+            const appointmentTreatments = appointmentDetails.appointmentTreatments.map(treatment => ({
+                Id: treatment.id, // Assuming new appointment (you can set as needed)
+                AppoinmentId: treatment.appoinmentId, // Since it's a new appointment
+                TreatmentTypeId: parseInt(treatment.treatmentTypeId, 10) // Convert to integer
+            }));
     
             setAppointmentData({
                 id: event.id,
                 scheduleDate: appointmentDetails.scheduleDate,
                 startTime: startTime,
                 endTime: endTime,
-                treatmentTypeId: appointmentDetails.treatmentTypeId.toString(),
-                employeeId: appointmentDetails.employeeId.toString(),
+                employeeId: appointmentDetails.employeeId ? appointmentDetails.employeeId.toString() : "",
                 customerName: appointmentDetails.customerName,
                 contactNo: appointmentDetails.contactNo,
                 tokenNo: appointmentDetails.tokenNo,
-                resourceId: foundResource.id.toString()
+                resourceId: foundResource.id.toString(),
+                remarks: appointmentDetails.remarks,
+                treatmentTypeId:treatmentTypeIds,
+                appointmentTreatments: appointmentTreatments
             });
     
             setStartTime(startTime);
@@ -731,7 +911,7 @@ function AppointmentScheduler() {
             <form onSubmit={handleSubmit} className="modal-appoinment-body modal-body custom-modal-body">
                 <div className="container-fluid">
                     <div className="row">
-                        <div className="col-md-12 form-group">
+                        <div className="col-md-6 form-group">
                             <label htmlFor="customerName">Customer Name <span className="text-danger">*</span></label>
                             <input 
                                 className={`form-control ${formErrors.customerName ? 'is-invalid' : ''}`}
@@ -742,28 +922,84 @@ function AppointmentScheduler() {
                                 onChange={handleInputChange} required 
                             />
                         </div>
-                    </div>
-                    <div className="row">
-                        <div className="col-md-12 form-group">
+                        <div className="col-md-6 form-group">
                             <label htmlFor="contactNo">Contact Number <span className="text-danger">*</span></label>
                             <input className={`form-control ${formErrors.contactNo ? 'is-invalid' : ''}`} type="text" id="contactNo" name="contactNo" value={appointmentData.contactNo} onChange={handleInputChange} required />
                         </div>
                     </div>
-                    <div className="row">
-                        <div className="col-md-6 col-sm-6 form-group">
-                            <label htmlFor="treatmentTypeId">Treatment Type <span className="text-danger">*</span></label>
-                            <select className={`form-control ${formErrors.treatmentTypeId ? 'is-invalid' : ''}`} id="treatmentTypeId" name="treatmentTypeId" value={appointmentData.treatmentTypeId} onChange={handleInputChange} required>
-                                <option value="" disabled>Select a Treatment Type</option>
-                                {treatmentTypes.map(type => <option key={type.id} value={type.id}>{type.treatmentType.name}</option>)}
-                            </select>
+                    {/* <div className="row">
+                        <div className="col-md-12 form-group">
+                            <label htmlFor="contactNo">Contact Number <span className="text-danger">*</span></label>
+                            <input className={`form-control ${formErrors.contactNo ? 'is-invalid' : ''}`} type="text" id="contactNo" name="contactNo" value={appointmentData.contactNo} onChange={handleInputChange} required />
                         </div>
-                        <div className="col-md-6 col-sm-6 form-group">
+                    </div> */}
+                    <div className="row">
+                        {/* <div className="col-md-6 col-sm-6 form-group">
+                            <label htmlFor="treatmentTypeId">Treatment Type(s) <span className="text-danger">*</span></label>
+                            <select 
+                                className={`form-control ${formErrors.treatmentTypeId ? 'is-invalid' : ''}`} 
+                                id="treatmentTypeId" 
+                                name="treatmentTypeId" 
+                                value={appointmentData.treatmentTypeId} 
+                                onChange={handleMultipleTreatmentTypeChange} 
+                                multiple
+                                required
+                            >
+                                <option value="" disabled>Select Treatment Types</option>
+                                {treatmentTypes.map(type => (
+                                    <option key={type.id} value={type.id}>{type.treatmentType.name}</option>
+                                ))}
+                            </select>
+                        </div> */}
+                        {/* <div className="col-md-6 col-sm-6 form-group">
+                            <label htmlFor="treatmentTypeId">Treatment Type(s) <span className="text-danger">*</span></label>
+                            <Autocomplete
+                                multiple
+                                id="treatmentTypeId"
+                                options={treatmentTypes} // Options to select
+                                getOptionLabel={(option) => option.treatmentType.name} // Label for each option
+                                value={treatmentTypes.filter(type => appointmentData.treatmentTypeId.includes(type.id))} // Pre-selected values
+                                onChange={handleMultipleTreatmentTypeChange} // Handle selection
+                                isOptionEqualToValue={(option, value) => option.id === value.id} // Compare options with selected values
+                                renderInput={(params) => (
+                                    <TextField 
+                                        {...params} 
+                                        error={Boolean(formErrors.treatmentTypeId)}
+                                        helperText={formErrors.treatmentTypeId || ''} 
+                                        variant="outlined"
+                                    />
+                                )}
+                            />
+                        </div> */}
+                        <div className="col-md-12 col-sm-12 form-group">
+                            <label htmlFor="treatmentTypeId">Treatment Type(s) <span className="text-danger">*</span></label>
+                            <Autocomplete
+                                multiple
+                                options={treatmentTypes}
+                                getOptionLabel={(option) => option.treatmentType.name} // Adjust based on your data structure
+                                value={treatmentTypes.filter(type => appointmentData.treatmentTypeId.includes(type.id))} // Selected values
+                                onChange={(event, value) => handleMultipleTreatmentTypeChange(event, value)} // Pass the selected values directly
+                                renderInput={(params) => (
+                                    <TextField 
+                                        {...params} 
+                                        variant="outlined" 
+                                        error={!!formErrors.treatmentTypeId} 
+                                        required 
+                                    />
+                                )}
+                            />
+                        </div>
+                        {/* <div className="col-md-6 col-sm-6 form-group">
+                            <label htmlFor="scheduleDate">Schedule Date <span className="text-danger">*</span></label><br/>
+                            <DatePicker className={`form-control ${formErrors.scheduleDate ? 'is-invalid' : ''}`} selected={appointmentData.scheduleDate} onChange={(date) => handleDateChange('scheduleDate', date)} dateFormat="MMMM d, yyyy" />
+                        </div> */}
+                    </div>
+                    <div className='row'>
+                    <div className="col-md-6 col-sm-6 form-group">
                             <label htmlFor="scheduleDate">Schedule Date <span className="text-danger">*</span></label><br/>
                             <DatePicker className={`form-control ${formErrors.scheduleDate ? 'is-invalid' : ''}`} selected={appointmentData.scheduleDate} onChange={(date) => handleDateChange('scheduleDate', date)} dateFormat="MMMM d, yyyy" />
                         </div>
-                    </div>
-                    <div className='row'>
-                        <div className="col-md-6 col-sm-6 form-group">
+                        <div className="col-md-3 col-sm-3 form-group">
                             <label htmlFor="startTime">Start Time <span className="text-danger">*</span></label><br/>
                             <DatePicker
                                 className="form-control"
@@ -776,23 +1012,23 @@ function AppointmentScheduler() {
                                 dateFormat="h:mm aa"
                             />
                         </div>
-                        <div className="col-md-6 col-sm-6 form-group">
+                        <div className="col-md-3 col-sm-3 form-group">
                             <label htmlFor="endTime">End Time <span className="text-danger">*</span></label><br/>
                             <DatePicker
                                 className="form-control"
                                 selected={endTime}
+                                onChange={(date) => handleTimeChange(date, 'endTime')}
                                 showTimeSelect
                                 showTimeSelectOnly
                                 timeIntervals={15}
                                 timeCaption="Time"
                                 dateFormat="h:mm aa"
-                                disabled
                             />
                         </div>
                     </div>
                     <div className="row">
                         <div className="col-md-6 form-group">
-                            <label htmlFor="employeeId">Employee <span className="text-danger">*</span></label>
+                            <label htmlFor="employeeId">Employee</label>
                             <select className={`form-control ${formErrors.employeeId ? 'is-invalid' : ''}`} id="employeeId" name="employeeId" value={appointmentData.employeeId} onChange={handleInputChange} required>
                                 <option value="" disabled>Select an Employee</option>
                                 {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.fullName}</option>)}
@@ -803,16 +1039,35 @@ function AppointmentScheduler() {
                             <input className="form-control" type="text" id="tokenNo" name="tokenNo" value={appointmentData.tokenNo} onChange={handleInputChange} />
                         </div>
                     </div>
+                    {/* New Remark Field */}
+                    <div className="row">
+                        <div className="col-md-12 form-group">
+                            <label htmlFor="remarks">Remarks</label>
+                            <textarea
+                                className="form-control"
+                                id="remarks"
+                                name="remarks"
+                                value={appointmentData.remarks}
+                                onChange={handleInputChange}
+                                rows="2"  // Number of visible rows in textarea
+                                placeholder="Enter any remarks or additional information"
+                            />
+                        </div>
+                    </div>
+                    <div className="custom-modal-footer row">
+                        {/* <div className="col-6 p-2">
+                            <button className="btn btn-danger" onClick={closeModal}>Delete</button>
+                        </div> */}
+                        <div className="col-6 p-2">
+                            <button onClick={closeModal} className="btn btn-danger">Delete</button>
+                        </div>
+                        <div className="col-6 p-2">
+                            <button onClick={handleSubmit} className="btn btn-success">Save</button>
+                        </div>
+                    </div>
                 </div>
             </form>
-            <div className="modal-footer custom-modal-footer row">
-                <div className="col-6 p-2">
-                    <button type="button" className="btn btn-danger custom-button" onClick={closeModal}>Delete</button>
-                </div>
-                <div className="col-6 p-2">
-                    <button onClick={handleSubmit} className="btn btn-primary custom-button">Save</button>
-                </div>
-            </div>
+
         </div>
     </div>
 </Modal>
