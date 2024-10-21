@@ -101,10 +101,10 @@ export const fetchAppointments = async () => {
 // Fetch treatment types from the server by location
 export const fetchTreatmentTypesByLocation = async () => {
     try {
-        const response = await api.get(`/treatmentlocation`);
-        return response.data;  // Assuming the response data contains the array of treatment types
+        const response = await api.get(`/treatmenttype`);
+        return response.data;
     } catch (error) {
-        console.error("Error fetching treatment types by location:", error);
+        console.error("Error fetching treatment types:", error);
         throw error;
     }
 };
