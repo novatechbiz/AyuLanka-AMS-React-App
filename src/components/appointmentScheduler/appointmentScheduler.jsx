@@ -28,6 +28,9 @@ function AppointmentScheduler() {
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [modalContent, setModalContent] = useState({type: '', message: ''});
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [proceedWithOverlap, setProceedWithOverlap] = useState(false);
+    const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [appointmentData, setAppointmentData] = useState({
         scheduleDate: new Date(),
         employeeId: '',
@@ -37,6 +40,7 @@ function AppointmentScheduler() {
         tokenIssueTime: new Date(),
         resourceId: '',
         remarks: '',
+        locationId: '',
         treatmentTypeId: [], // Store selected treatment type IDs as an array
         appoinmentTreatments: [], // Initialize appoinmentTreatments as an empty array
     });
@@ -132,7 +136,7 @@ function AppointmentScheduler() {
 
                 // Get all treatment types and join them with commas
             const treatmentTypes = appointment.appointmentTreatments
-            .map(treatment => treatment.treatmentLocation.treatmentType.name)
+            .map(treatment => treatment.treatmentType.name)
             .join(', ');
 
             console.log("treatmentTypes", treatmentTypes);    
@@ -142,7 +146,7 @@ function AppointmentScheduler() {
                 title: `${appointment.customerName}`,
                 start: start,
                 end: end,
-                resourceId: appointment.appointmentTreatments[0].treatmentLocation.locationId.toString(),
+                resourceId: appointment.locationId.toString(),
                 employeeId: appointment.employeeId,
                 backgroundColor: getBackgroundColor(appointment.employeeId, appointment.tokenNo),
                 extendedProps: {
@@ -237,8 +241,8 @@ function AppointmentScheduler() {
             selectedIds.forEach(id => {
                 const selectedTreatment = treatmentTypes.find(t => t.id == id);
                 if (selectedTreatment) {
-                    let durationMilliseconds = (selectedTreatment.treatmentType.durationHours * 3600 + 
-                                                (selectedTreatment.treatmentType.durationMinutes || 0) * 60) * 1000;
+                    let durationMilliseconds = (selectedTreatment.durationHours * 3600 + 
+                                                (selectedTreatment.durationMinutes || 0) * 60) * 1000;
                     totalDurationMilliseconds += durationMilliseconds; // Accumulate total duration
                 }
             });
@@ -338,59 +342,82 @@ function AppointmentScheduler() {
 
 
         if(appointmentData.employeeId) {
-        
-        // Find the selected employee
-        // const selectedTreatment = treatmentTypes.find(type => type.id.toString() === appointmentData.treatmentTypeId);
-        const selectedEmployee = employees.find(emp => emp.id.toString() === appointmentData.employeeId);
+            // Find the selected employee
+            // const selectedTreatment = treatmentTypes.find(type => type.id.toString() === appointmentData.treatmentTypeId);
+            const selectedEmployee = employees.find(emp => emp.id.toString() === appointmentData.employeeId);
+            setSelectedEmployee(selectedEmployee)
 
-        if (!selectedEmployee) {
-            setNotification({ message: "Selected employee is invalid.", type: 'error' });
-            return;
+            if (!selectedEmployee) {
+                setNotification({ message: "Selected employee is invalid.", type: 'error' });
+                return;
+            }
+
+            const startTime = moment(appointmentData.startTime).toDate();
+            const endTime = moment(appointmentData.endTime).toDate();
+
+            const isOverlap = currentEvents.some(event => {
+                if (appointmentData.id && (event.id.toString() === appointmentData.id.toString())) return false;
+                console.log('current event: ', appointmentData.id, 'checking event: ', event.id);
+                const eventEmployeeId = event.employeeId;
+                const eventStart = moment(event.start).toDate();
+                const eventEnd = moment(event.end).toDate();
+                const isStartWithinEvent = startTime >= eventStart && startTime < eventEnd;
+                const isEndWithinEvent = endTime > eventStart && endTime <= eventEnd;
+                const isEventWithinNew = eventStart >= startTime && eventEnd <= endTime;
+
+                return eventEmployeeId === selectedEmployee.id && (isStartWithinEvent || isEndWithinEvent || isEventWithinNew);
+            });
+
+            // Trigger the modal if there's an overlap and the user hasn't confirmed
+            if (isOverlap && !proceedWithOverlap) {
+                setShowConfirmModal(true); // Show the confirmation modal
+                return; // Stop form submission until user confirms
+            }
+
+            const scheduleDate = moment(appointmentData.scheduleDate).toDate();
+            const employeeSchedule = await fetchEmployeeSchedule(selectedEmployee.id, scheduleDate);
+
+            if (!employeeSchedule) {
+                setNotification({ message: `The selected employee is not available on the selected date.`, type: 'error' });
+                return;
+            }
+
+            const startTimeFormatted = startTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const endTimeFormatted = endTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            const appStartTime = parseTime(startTimeFormatted);
+            const appEndTime = parseTime(endTimeFormatted);
+            const workStartTime = parseTime(employeeSchedule.shiftMaster.fromTime);
+            const workEndTime = parseTime(employeeSchedule.shiftMaster.toTime);
+
+            const isValid = isWithinWorkHours(appStartTime, appEndTime, workStartTime, workEndTime);
+
+            if (!isValid) {
+                setNotification({ message: `The appointment time does not align with the ${selectedEmployee.fullName}'s working hours. Shift of the selected employee is ${employeeSchedule.shiftMaster.fromTime} - ${employeeSchedule.shiftMaster.toTime}`, type: 'error' });
+                return;
+            }
         }
 
-        const startTime = moment(appointmentData.startTime).toDate();
-        const endTime = moment(appointmentData.endTime).toDate();
+        // Check for overlapping appointments within the same resource (e.g., room, machine)
+        if (appointmentData.resourceId) {
+            const selectedResource = resources.find(resource => resource.id.toString() === appointmentData.resourceId);
 
-        const isOverlap = currentEvents.some(event => {
-            if (appointmentData.id && (event.id.toString() === appointmentData.id.toString())) return false;
-            console.log('current event: ', appointmentData.id, 'checking event: ', event.id);
-            const eventEmployeeId = event.employeeId;
-            const eventStart = moment(event.start).toDate();
-            const eventEnd = moment(event.end).toDate();
-            const isStartWithinEvent = startTime >= eventStart && startTime < eventEnd;
-            const isEndWithinEvent = endTime > eventStart && endTime <= eventEnd;
-            const isEventWithinNew = eventStart >= startTime && eventEnd <= endTime;
+            const isResourceOverlap = currentEvents.some(event => {
+                if (appointmentData.id && (event.id.toString() === appointmentData.id.toString())) return false;
+                const eventResourceId = event.resourceId;
+                const eventStart = moment(event.start).toDate();
+                const eventEnd = moment(event.end).toDate();
+                const isStartWithinEvent = startTime >= eventStart && startTime < eventEnd;
+                const isEndWithinEvent = endTime > eventStart && endTime <= eventEnd;
+                const isEventWithinNew = eventStart >= startTime && eventEnd <= endTime;
 
-            return eventEmployeeId === selectedEmployee.id && (isStartWithinEvent || isEndWithinEvent || isEventWithinNew);
-        });
+                return eventResourceId === appointmentData.resourceId && (isStartWithinEvent || isEndWithinEvent || isEventWithinNew);
+            });
 
-        if (isOverlap) {
-            setNotification({ message: `The employee ${selectedEmployee.fullName} is already assigned to another appointment during this time.`, type: 'error' });
-            return;
-        }
-
-        const scheduleDate = moment(appointmentData.scheduleDate).toDate();
-        const employeeSchedule = await fetchEmployeeSchedule(selectedEmployee.id, scheduleDate);
-
-        if (!employeeSchedule) {
-            setNotification({ message: `The selected employee is not available on the selected date.`, type: 'error' });
-            return;
-        }
-
-        const startTimeFormatted = startTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        const endTimeFormatted = endTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-        const appStartTime = parseTime(startTimeFormatted);
-        const appEndTime = parseTime(endTimeFormatted);
-        const workStartTime = parseTime(employeeSchedule.shiftMaster.fromTime);
-        const workEndTime = parseTime(employeeSchedule.shiftMaster.toTime);
-
-        const isValid = isWithinWorkHours(appStartTime, appEndTime, workStartTime, workEndTime);
-
-        if (!isValid) {
-            setNotification({ message: `The appointment time does not align with the ${selectedEmployee.fullName}'s working hours. Shift of the selected employee is ${employeeSchedule.shiftMaster.fromTime} - ${employeeSchedule.shiftMaster.toTime}`, type: 'error' });
-            return;
-        }
+            if (isResourceOverlap) {
+                setNotification({ message: `The selected room is already in use during this time slot.`, type: 'error' });
+                return;
+            }
         }
         
 
@@ -415,6 +442,7 @@ function AppointmentScheduler() {
             EnteredDate: new Date().toISOString(),
             TokenNo: appointmentData.tokenNo,
             Remarks: appointmentData.remarks,
+            LocationId: appointmentData.resourceId,
             appoinmentTreatments: treatmentModels
         };
 
@@ -477,27 +505,25 @@ function AppointmentScheduler() {
     
         try {
             const appointmentDetails = await fetchAppointmentDetails(event.id);
+
+            const treatmentTypeIds = appointmentDetails.appointmentTreatments.map(treatment => treatment.treatmentTypeId);
+
+            console.log('treatmentTypeIds', treatmentTypeIds);
     
-            const treatmentTypesbyLocations = await fetchTreatmentTypesByLocation();
-    
-            // const filteredTreatmentType = treatmentTypesbyLocations.find(item => {
-            //     return item.locationId === parseInt(event._def.resourceIds[0], 10) &&
-            //         item.treatmentTypeId === parseInt(appointmentDetails.treatmentLocation.treatmentTypeId, 10);
-            // });
-    
+            const treatmentTypesbyLocations = await fetchTreatmentTypesByLocation();    
             
             const scheduleDate = moment(newStart).toDate();
             console.log('Schedule Date:', scheduleDate);
 
             if(appointmentDetails.employeeId) {
                 const treatmentTypesNew = treatmentTypesbyLocations.filter(item => item.locationId === parseInt(event._def.resourceIds[0]));
-                const selectedTreatment = treatmentTypesNew.find(type => type.treatmentTypeId.toString() === appointmentDetails.treatmentLocation.treatmentTypeId.toString());
+                //const selectedTreatment = treatmentTypesNew.find(type => type.treatmentTypeId.toString() === appointmentDetails.treatmentLocation.treatmentTypeId.toString());
                 const selectedEmployee = employees.find(emp => emp.id.toString() === appointmentDetails.employeeId.toString());
         
-                if (!selectedTreatment || !selectedEmployee) {
-                    setNotification({ message: "Selected treatment type or employee is invalid.", type: 'error' });
-                    return;
-                }
+                // if (!selectedTreatment || !selectedEmployee) {
+                //     setNotification({ message: "Selected treatment type or employee is invalid.", type: 'error' });
+                //     return;
+                // }
         
                 const isOverlap = currentEvents.some(event => {
                     if (event.id.toString() === appointmentDetails.id.toString()) return false;
@@ -511,9 +537,10 @@ function AppointmentScheduler() {
                     return eventEmployeeId === selectedEmployee.id && (isStartWithinEvent || isEndWithinEvent || isEventWithinNew);
                 });
         
-                if (isOverlap) {
-                    setNotification({ message: `The employee ${selectedEmployee.fullName} is already assigned to another appointment during this time.`, type: 'error' });
-                    return;
+                // Trigger the modal if there's an overlap and the user hasn't confirmed
+                if (isOverlap && !proceedWithOverlap) {
+                    setShowConfirmModal(true); // Show the confirmation modal
+                    return; // Stop form submission until user confirms
                 }
         
                 const employeeSchedule = await fetchEmployeeSchedule(selectedEmployee.id, scheduleDate);
@@ -535,6 +562,28 @@ function AppointmentScheduler() {
                     return;
                 }
             }
+
+            // Check for overlapping appointments within the same resource (e.g., room, machine)
+            if (appointmentData.resourceId) {
+                const selectedResource = resources.find(resource => resource.id.toString() === appointmentData.resourceId);
+
+                const isResourceOverlap = currentEvents.some(event => {
+                    if (appointmentData.id && (event.id.toString() === appointmentData.id.toString())) return false;
+                    const eventResourceId = event.resourceId;
+                    const eventStart = moment(event.start).toDate();
+                    const eventEnd = moment(event.end).toDate();
+                    const isStartWithinEvent = startTime >= eventStart && startTime < eventEnd;
+                    const isEndWithinEvent = endTime > eventStart && endTime <= eventEnd;
+                    const isEventWithinNew = eventStart >= startTime && eventEnd <= endTime;
+
+                    return eventResourceId === appointmentData.resourceId && (isStartWithinEvent || isEndWithinEvent || isEventWithinNew);
+                });
+
+                if (isResourceOverlap) {
+                    setNotification({ message: `The selected room is already in use during this time slot.`, type: 'error' });
+                    return;
+                }
+            }
             
             const userId = sessionStorage.getItem('userId');
     
@@ -548,7 +597,7 @@ function AppointmentScheduler() {
             setCurrentEvents(updatedEvents);
 
             // Map treatment type IDs to AppoinmentTreatmentRequestModel
-            const treatmentModels = appointmentData.treatmentTypeId.map(treatmentTypeId => ({
+            const treatmentModels = treatmentTypeIds.map(treatmentTypeId => ({
                 Id: 0, // Assuming new appointment (you can set as needed)
                 AppoinmentId: null, // Since it's a new appointment
                 TreatmentTypeId: parseInt(treatmentTypeId, 10) // Convert to integer
@@ -573,7 +622,7 @@ function AppointmentScheduler() {
                 Id: event.id,
                 ScheduleDate: moment(scheduleDate).toISOString(),
                 //TreatmentTypeId: filteredTreatmentType.id,
-                EmployeeId: appointmentDetails.employeeId,
+                EmployeeId: appointmentDetails.employeeId ? appointmentDetails.employeeId : 0,
                 CustomerName: appointmentDetails.customerName,
                 ContactNo: appointmentDetails.contactNo,
                 FromTime: moment(newStart).format('HH:mm:ss'),
@@ -582,14 +631,15 @@ function AppointmentScheduler() {
                 EnteredDate: moment().toISOString(),
                 TokenNo: appointmentDetails.tokenNo,
                 Remarks: appointmentDetails.remarks,
+                LocationId: event._def.resourceIds[0],
                 AppoinmentTreatments: treatmentModels
             };
     
             console.log('appointmentDataToSend', appointmentDataToSend);
-            //const createdAppointment = await addAppointment(appointmentDataToSend);
+            const createdAppointment = await addAppointment(appointmentDataToSend);
             setModalContent({ type: 'success', message: 'Appointment updated successfully!' });
             setShowModal(true);
-            //console.log('Appointment created:', createdAppointment);
+            console.log('Appointment created:', createdAppointment);
         } catch (error) {
             console.error('Failed to update appointment:', error);
             setModalContent({ type: 'error', message: 'Failed to update appointment' });
@@ -765,7 +815,7 @@ function AppointmentScheduler() {
             const endTime = new Date(`${appointmentDetails.scheduleDate.split('T')[0]}T${appointmentDetails.toTime}`);
     
             // Make sure the selected resource exists in your state before setting it
-            const foundResource = resources.find(r => r.id === appointmentDetails.appointmentTreatments[0].treatmentLocation.locationId);
+            const foundResource = resources.find(r => r.id === appointmentDetails.locationId);
             if (!foundResource) {
                 setNotification({ message: `Selected resource not found.`, type: 'error' });
                 console.error("Selected resource not found.");
@@ -775,8 +825,8 @@ function AppointmentScheduler() {
             setSelectedResource(foundResource);
 
             const treatmentTypesbyLocations = await fetchTreatmentTypesByLocation();
-            const treatmentTypes = treatmentTypesbyLocations.filter(item => item.locationId === foundResource.id);
-            setTreatmentTypes(treatmentTypes);
+            //const treatmentTypes = treatmentTypesbyLocations.filter(item => item.locationId === foundResource.id);
+            setTreatmentTypes(treatmentTypesbyLocations);
 
             const treatmentTypeIds = appointmentDetails.appointmentTreatments.map(treatment => treatment.treatmentTypeId);
 
@@ -847,10 +897,10 @@ function AppointmentScheduler() {
                         const treatmentTypesbyLocations = await fetchTreatmentTypesByLocation();
                         console.log('treatmentTypesbyLocations', treatmentTypesbyLocations);
                 
-                        const treatmentTypes = treatmentTypesbyLocations.filter(item => item.locationId === locationId);
+                        // const treatmentTypes = treatmentTypesbyLocations.filter(item => item.locationId === locationId);
                 
-                        console.log('Filtered treatment types for location:', treatmentTypes);
-                        setTreatmentTypes(treatmentTypes);
+                        // console.log('Filtered treatment types for location:', treatmentTypes);
+                        setTreatmentTypes(treatmentTypesbyLocations);
                     } catch (error) {
                         console.error('Error loading treatment types for selected location:', error);
                     }
@@ -973,7 +1023,7 @@ function AppointmentScheduler() {
                             <Autocomplete
                                 multiple
                                 options={treatmentTypes}
-                                getOptionLabel={(option) => option.treatmentType.name} // Adjust based on your data structure
+                                getOptionLabel={(option) => option.name} // Adjust based on your data structure
                                 value={treatmentTypes.filter(type => appointmentData.treatmentTypeId.includes(type.id))} // Selected values
                                 onChange={(event, value) => handleMultipleTreatmentTypeChange(event, value)} // Pass the selected values directly
                                 renderInput={(params) => (
@@ -1068,6 +1118,27 @@ function AppointmentScheduler() {
         </div>
     </div>
 </Modal>
+<Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
+    <Modal.Header closeButton>
+        <Modal.Title>Confirm Appointment</Modal.Title>
+    </Modal.Header>
+    <Modal.Body>
+        The employee {selectedEmployee?.fullName} is already assigned to another appointment during this time. Do you want to proceed anyway?
+    </Modal.Body>
+    <Modal.Footer>
+        <button className="btn btn-danger" onClick={() => setShowConfirmModal(false)}>
+            Cancel
+        </button>
+        <button className="btn btn-success" onClick={() => {
+            setProceedWithOverlap(true);
+            setShowConfirmModal(false);
+            handleSubmit(); // Proceed with the submission
+        }}>
+            Proceed
+        </button>
+    </Modal.Footer>
+</Modal>
+
 
             <ConfirmationModal
                 isOpen={isConfirmModalOpen}
