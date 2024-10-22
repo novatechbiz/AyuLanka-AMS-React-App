@@ -74,7 +74,11 @@ function AppointmentScheduler() {
                     fetchTreatmentLocations(),
                     fetchAppointments()  // Fetch appointments
                 ]);
-                setEmployees(empData);
+
+                // Filter employees with designationCode 'MA'
+                const filteredEmployees = empData.filter(employee => employee.designation?.designationCode === 'MA');
+
+                setEmployees(filteredEmployees);
                 setResources(treatmentLocationData);
                 setCurrentEvents(formatAppointments(appointments)); 
             } catch (error) {
@@ -309,10 +313,6 @@ function AppointmentScheduler() {
     }
     
     function isWithinWorkHours(appStart, appEnd, workStart, workEnd) {
-        console.log('App Start:', appStart.toISOString());
-        console.log('App End:', appEnd.toISOString());
-        console.log('Work Start:', workStart.toISOString());
-        console.log('Work End:', workEnd.toISOString());
 
         return appStart >= workStart && appEnd <= workEnd;
     }
@@ -342,6 +342,7 @@ function AppointmentScheduler() {
 
 
         if(appointmentData.employeeId) {
+
             // Find the selected employee
             // const selectedTreatment = treatmentTypes.find(type => type.id.toString() === appointmentData.treatmentTypeId);
             const selectedEmployee = employees.find(emp => emp.id.toString() === appointmentData.employeeId);
@@ -354,27 +355,39 @@ function AppointmentScheduler() {
 
             const startTime = moment(appointmentData.startTime).toDate();
             const endTime = moment(appointmentData.endTime).toDate();
-
+            
             const isOverlap = currentEvents.some(event => {
                 if (appointmentData.id && (event.id.toString() === appointmentData.id.toString())) return false;
+                
                 console.log('current event: ', appointmentData.id, 'checking event: ', event.id);
+                
                 const eventEmployeeId = event.employeeId;
                 const eventStart = moment(event.start).toDate();
                 const eventEnd = moment(event.end).toDate();
                 const isStartWithinEvent = startTime >= eventStart && startTime < eventEnd;
                 const isEndWithinEvent = endTime > eventStart && endTime <= eventEnd;
                 const isEventWithinNew = eventStart >= startTime && eventEnd <= endTime;
-
-                return eventEmployeeId === selectedEmployee.id && (isStartWithinEvent || isEndWithinEvent || isEventWithinNew);
+                
+                // Check if the employee is the same but the resource is different
+                const isSameEmployee = eventEmployeeId === selectedEmployee.id;
+                const isDifferentResource = event.resourceId !== appointmentData.resourceId;
+            
+                // If same employee but different resource, allow it (no overlap)
+                if (isSameEmployee && isDifferentResource) return false;
+            
+                // Otherwise, check for overlaps
+                return isSameEmployee && (isStartWithinEvent || isEndWithinEvent || isEventWithinNew);
             });
 
             // Trigger the modal if there's an overlap and the user hasn't confirmed
             if (isOverlap && !proceedWithOverlap) {
-                setShowConfirmModal(true); // Show the confirmation modal
+                setNotification({ message: `The selected room is already in use during this time slot.`, type: 'error' });
                 return; // Stop form submission until user confirms
             }
 
             const scheduleDate = moment(appointmentData.scheduleDate).toDate();
+
+
             const employeeSchedule = await fetchEmployeeSchedule(selectedEmployee.id, scheduleDate);
 
             if (!employeeSchedule) {
@@ -382,16 +395,36 @@ function AppointmentScheduler() {
                 return;
             }
 
-            const startTimeFormatted = startTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            const endTimeFormatted = endTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const st = new Date(startTime);
+            const ed = new Date(endTime);
 
-            const appStartTime = parseTime(startTimeFormatted);
-            const appEndTime = parseTime(endTimeFormatted);
-            const workStartTime = parseTime(employeeSchedule.shiftMaster.fromTime);
-            const workEndTime = parseTime(employeeSchedule.shiftMaster.toTime);
+            // Extract the time part in 24-hour format (HH:mm:ss)
+            const startTimeString = st.toLocaleTimeString('en-GB', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false, // 24-hour format
+            });
 
-            const isValid = isWithinWorkHours(appStartTime, appEndTime, workStartTime, workEndTime);
+            const endTimeString = ed.toLocaleTimeString('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false, // 24-hour format
+              });
 
+            const convertedFromShift = employeeSchedule.shiftMaster.fromTime;
+            const convertedToShift = employeeSchedule.shiftMaster.toTime;
+
+            console.log('startTime:', startTime);
+            console.log('endTime:', endTime);
+            console.log('startTimeString:', startTimeString);
+            console.log('endTimeString:', endTimeString);
+            console.log('employeeSchedule.shiftMaster.fromTime:', employeeSchedule.shiftMaster.fromTime);
+            console.log('employeeSchedule.shiftMaster.toTime:', employeeSchedule.shiftMaster.toTime);
+
+            const isValid = isWithinWorkHours(startTimeString, endTimeString, convertedFromShift, convertedToShift);
+            console.log('isValid:', isValid);
             if (!isValid) {
                 setNotification({ message: `The appointment time does not align with the ${selectedEmployee.fullName}'s working hours. Shift of the selected employee is ${employeeSchedule.shiftMaster.fromTime} - ${employeeSchedule.shiftMaster.toTime}`, type: 'error' });
                 return;
@@ -497,11 +530,8 @@ function AppointmentScheduler() {
     
     const handleEventDrop = async (info) => {
         const { event } = info;
-        const newStart = moment(event.start).toDate();
-        const newEnd = moment(event.end).toDate();
-        
-        console.log('New Start:', newStart);
-        console.log('New End:', newEnd);
+        const startTime = moment(event.start).toDate();
+        const endTime = moment(event.end).toDate();
     
         try {
             const appointmentDetails = await fetchAppointmentDetails(event.id);
@@ -512,7 +542,7 @@ function AppointmentScheduler() {
     
             const treatmentTypesbyLocations = await fetchTreatmentTypesByLocation();    
             
-            const scheduleDate = moment(newStart).toDate();
+            const scheduleDate = moment(startTime).toDate();
             console.log('Schedule Date:', scheduleDate);
 
             if(appointmentDetails.employeeId) {
@@ -526,37 +556,71 @@ function AppointmentScheduler() {
                 // }
         
                 const isOverlap = currentEvents.some(event => {
-                    if (event.id.toString() === appointmentDetails.id.toString()) return false;
+                    if (appointmentData.id && (event.id.toString() === appointmentData.id.toString())) return false;
+                    
+                    console.log('current event: ', appointmentData.id, 'checking event: ', event.id);
+                    
                     const eventEmployeeId = event.employeeId;
                     const eventStart = moment(event.start).toDate();
                     const eventEnd = moment(event.end).toDate();
-                    const isStartWithinEvent = newStart >= eventStart && newStart < eventEnd;
-                    const isEndWithinEvent = newEnd > eventStart && newEnd <= eventEnd;
-                    const isEventWithinNew = eventStart >= newStart && eventEnd <= newEnd;
-        
-                    return eventEmployeeId === selectedEmployee.id && (isStartWithinEvent || isEndWithinEvent || isEventWithinNew);
+                    const isStartWithinEvent = startTime >= eventStart && startTime < eventEnd;
+                    const isEndWithinEvent = endTime > eventStart && endTime <= eventEnd;
+                    const isEventWithinNew = eventStart >= startTime && eventEnd <= endTime;
+                    
+                    // Check if the employee is the same but the resource is different
+                    const isSameEmployee = eventEmployeeId === selectedEmployee.id;
+                    const isDifferentResource = event.resourceId !== appointmentData.resourceId;
+                
+                    // If same employee but different resource, allow it (no overlap)
+                    if (isSameEmployee && isDifferentResource) return false;
+                
+                    // Otherwise, check for overlaps
+                    return isSameEmployee && (isStartWithinEvent || isEndWithinEvent || isEventWithinNew);
                 });
         
                 // Trigger the modal if there's an overlap and the user hasn't confirmed
                 if (isOverlap && !proceedWithOverlap) {
-                    setShowConfirmModal(true); // Show the confirmation modal
+                    setNotification({ message: `The selected room is already in use during this time slot.`, type: 'error' });
                     return; // Stop form submission until user confirms
                 }
         
                 const employeeSchedule = await fetchEmployeeSchedule(selectedEmployee.id, scheduleDate);
+
         
                 if (!employeeSchedule) {
                     setNotification({ message: `The selected employee is not available on the selected date.`, type: 'error' });
                     return;
                 }
+
+                const st = new Date(startTime);
+                const ed = new Date(endTime);
+
+                // Extract the time part in 24-hour format (HH:mm:ss)
+                const startTimeString = st.toLocaleTimeString('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false, // 24-hour format
+                });
+
+                const endTimeString = ed.toLocaleTimeString('en-GB', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false, // 24-hour format
+                });
+
+                const convertedFromShift = employeeSchedule.shiftMaster.fromTime;
+                const convertedToShift = employeeSchedule.shiftMaster.toTime;
+
+                console.log('startTime:', startTime);
+                console.log('endTime:', endTime);
+                console.log('startTimeString:', startTimeString);
+                console.log('endTimeString:', endTimeString);
+                console.log('convertedFromShift:', convertedFromShift);
+                console.log('convertedToShift:', convertedToShift);
         
-                const convertedFromShift = convertTimeToDateTime(employeeSchedule.shiftMaster.fromTime, newStart);
-                const convertedToShift = convertTimeToDateTime(employeeSchedule.shiftMaster.toTime, newStart);
-        
-                console.log('Converted From Shift:', convertedFromShift);
-                console.log('Converted To Shift:', convertedToShift);
-        
-                const isValid = isWithinWorkHours(newStart, newEnd, convertedFromShift, convertedToShift);
+                const isValid = isWithinWorkHours(startTimeString, endTimeString, convertedFromShift, convertedToShift);
                 if (!isValid) {
                     setNotification({ message: `The appointment time does not align with the ${selectedEmployee.fullName}'s working hours. Shift of the selected employee is ${employeeSchedule.shiftMaster.fromTime} - ${employeeSchedule.shiftMaster.toTime}`, type: 'error' });
                     return;
@@ -589,7 +653,7 @@ function AppointmentScheduler() {
     
             const updatedEvents = currentEvents.map(ev => {
                 if (ev.id === event.id) {
-                    return { ...ev, start: newStart, end: newEnd };
+                    return { ...ev, start: startTime, end: endTime };
                 }
                 return ev;
             });
@@ -606,8 +670,8 @@ function AppointmentScheduler() {
             setAppointmentData({
                 id: event.id,
                 scheduleDate: scheduleDate,
-                startTime: newStart,
-                endTime: newEnd,
+                startTime: startTime,
+                endTime: endTime,
                 //treatmentTypeId: appointmentDetails.treatmentTypeId.toString(),
                 employeeId: appointmentDetails.employeeId ? appointmentDetails.employeeId.toString() : 0,
                 customerName: appointmentDetails.customerName,
@@ -625,8 +689,8 @@ function AppointmentScheduler() {
                 EmployeeId: appointmentDetails.employeeId ? appointmentDetails.employeeId : 0,
                 CustomerName: appointmentDetails.customerName,
                 ContactNo: appointmentDetails.contactNo,
-                FromTime: moment(newStart).format('HH:mm:ss'),
-                ToTime: moment(newEnd).format('HH:mm:ss'),
+                FromTime: moment(startTime).format('HH:mm:ss'),
+                ToTime: moment(endTime).format('HH:mm:ss'),
                 EnteredBy: userId,
                 EnteredDate: moment().toISOString(),
                 TokenNo: appointmentDetails.tokenNo,
@@ -649,21 +713,21 @@ function AppointmentScheduler() {
     
     
 
-    function convertTimeToDateTime(timeStr, baseDate) {
-        const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+    // function convertTimeToDateTime(timeStr, baseDate) {
+    //     const [hours, minutes, seconds] = timeStr.split(':').map(Number);
 
-        // Create a new Date object based on the baseDate to avoid mutating it
-        let dateTime = new Date(baseDate);
-        dateTime.setHours(hours, minutes, seconds, 0);
+    //     // Create a new Date object based on the baseDate to avoid mutating it
+    //     let dateTime = new Date(baseDate);
+    //     dateTime.setHours(hours, minutes, seconds, 0);
 
-        // Adjust the date object if the time indicates "00:00:00" which means midnight, i.e., start of the next day
-        if (timeStr === "00:00:00") {
-            dateTime.setDate(dateTime.getDate() + 1);
-            dateTime.setHours(0, 0, 0, 0);
-        }
+    //     // Adjust the date object if the time indicates "00:00:00" which means midnight, i.e., start of the next day
+    //     if (timeStr === "00:00:00") {
+    //         dateTime.setDate(dateTime.getDate() + 1);
+    //         dateTime.setHours(0, 0, 0, 0);
+    //     }
 
-        return dateTime;
-    }
+    //     return dateTime;
+    // }
 
     useEffect(() => {
         console.log("Current events updated:", currentEvents);
@@ -742,6 +806,25 @@ function AppointmentScheduler() {
         console.log('treatmentTypes', treatmentTypes);
         
         if (name === 'startTime') {
+            setNotification({ message: '', type: '' });
+
+        // Check required fields and set errors
+        const errors = {
+            customerName: !appointmentData.customerName,
+            contactNo: !appointmentData.contactNo,
+            treatmentTypeId: !appointmentData.treatmentTypeId,
+            // employeeId: !appointmentData.employeeId,
+            scheduleDate: !appointmentData.scheduleDate
+        };
+
+        setFormErrors(errors);
+
+        // If any field has an error, stop the form submission
+        if (Object.values(errors).some(error => error)) {
+            console.log('Validation errors', errors);
+            return;
+        }
+        
             setStartTime(date);
     
             let totalDurationMilliseconds = 0; // Initialize total duration for multiple treatments
@@ -755,7 +838,7 @@ function AppointmentScheduler() {
                 if (selectedTreatment) {
                     let durationMilliseconds = 0;
     
-                    const { durationHours, durationMinutes } = selectedTreatment.treatmentType; // Destructure duration fields
+                    const { durationHours, durationMinutes } = selectedTreatment; // Destructure duration fields
                     
                     if (durationHours || durationMinutes) {
                         // Calculate duration in milliseconds
@@ -1118,7 +1201,7 @@ function AppointmentScheduler() {
         </div>
     </div>
 </Modal>
-<Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
+{/* <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
     <Modal.Header closeButton>
         <Modal.Title>Confirm Appointment</Modal.Title>
     </Modal.Header>
@@ -1137,7 +1220,7 @@ function AppointmentScheduler() {
             Proceed
         </button>
     </Modal.Footer>
-</Modal>
+</Modal> */}
 
 
             <ConfirmationModal
