@@ -14,6 +14,8 @@ class User extends React.Component {
       currentUser: {
         id: null,
         fullName: "",
+        callingName: "",
+        employeeNumber: "",
         address: "",
         nic: "",
         joinedDate: "",
