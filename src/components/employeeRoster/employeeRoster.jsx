@@ -60,9 +60,23 @@ function EmployeeRoster() {
         setErrorModalOpen(false);
     };
 
+    useEffect(() => {
+        if (startDate && endDate) {
+            fetchAllData();
+            fetchRosterDates().then(dates => {
+                const formattedDates = dates.map(date => ({
+                    start: new Date(date.startDate),
+                    end: new Date(date.endDate)
+                }));
+                setRosterDates(formattedDates);
+            });
+        }
+    }, [startDate, endDate]);
+    
     const fetchAllData = async () => {
         try {
             const fetchedEmployees = await fetchEmployees();
+            console.log('Fetched employees:', fetchedEmployees); // Log fetched employees here
             const fetchedShifts = await fetchShifts();
             const fetchedLeaves = await fetchLeaves(startDate, endDate);
             const formattedLeaveData = processLeaveData(fetchedLeaves); 
@@ -73,6 +87,11 @@ function EmployeeRoster() {
             console.error("Failed to fetch data:", error);
         }
     };
+    
+    // Log updated employees whenever they change
+    useEffect(() => {
+        console.log('Updated employees:', employees);
+    }, [employees]);
 
     const processLeaveData = (leaveArray) => {
         const leaveDates = {};
@@ -96,26 +115,16 @@ function EmployeeRoster() {
         });
         return leaveDates;
     };
-    
 
+    // Log updated employees whenever they change
     useEffect(() => {
-        if (startDate && endDate) {
-            fetchAllData();
-            fetchRosterDates().then(dates => {
-                const formattedDates = dates.map(date => ({
-                    start: new Date(date.startDate),
-                    end: new Date(date.endDate)
-                }));
-                setRosterDates(formattedDates);
-            });
-        }
-    }, [startDate, endDate]);
-
-    useEffect(() => {
+        console.log('Updated employees:', employees);
+        // Apply filters whenever employees are updated
         applyFilters();
-    }, [selectedEmployee, selectedEmploymentType, selectedShift]);
+    }, [employees, selectedEmployee, selectedEmploymentType, selectedShift]);
 
     const applyFilters = () => {
+        console.log('employeesssssssssssssss', employees)
         let filtered = employees;
 
         if (selectedEmployee) {
