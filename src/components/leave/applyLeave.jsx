@@ -213,7 +213,7 @@ class ApplyLeave extends React.Component {
                   <option value="">Select Employee</option>
                   {this.state.employees.map((employee) => (
                     <option key={employee.id} value={employee.id}>
-                      {employee.fullName}
+                    {employee.employeeNumber} - {employee.callingName}
                     </option>
                   ))}
                 </select>
@@ -305,7 +305,7 @@ class ApplyLeave extends React.Component {
                 <tbody>
                   {this.state.leaveApplications.map((leave, index) => (
                     <tr key={index}>
-                      <td>{leave.employee ? leave.employee.fullName : ''}</td>
+                      <td>{leave.employee ? leave.employee.employeeNumber : ''} - {leave.employee ? leave.employee.callingName : ''}</td>
                       <td>{leave.leaveType ? leave.leaveType.name : ''}</td>
                       <td>{this.formatDate(leave.fromDate)}</td>
                       <td>{this.formatDate(leave.toDate)}</td>

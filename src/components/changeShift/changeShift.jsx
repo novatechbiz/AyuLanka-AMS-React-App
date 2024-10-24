@@ -148,7 +148,7 @@ function ChangeShift() {
                                 <select className={`form-control ${shouldShowError('selectedEmployee') ? 'error-border' : ''}`} value={selectedEmployee} onChange={handleEmployeeChange}>
                                     <option value="">Select an Employee</option>
                                     {employees.map(employee => (
-                                        <option key={employee.id} value={employee.id}>{employee.fullName}</option>
+                                        <option key={employee.id} value={employee.id}>{employee.employeeNumber} - {employee.callingName}</option>
                                     ))}
                                 </select><br />
                             </div>
@@ -193,7 +193,7 @@ function ChangeShift() {
                             <tbody>
                                 {pendingApprovals.map((approval, index) => (
                                     <tr key={index}>
-                                        <td>{approval.shiftChangeMaster.employee.fullName}</td>
+                                        <td>{approval.shiftChangeMaster.employee.employeeNumber} - {approval.shiftChangeMaster.employee.callingName}</td>
                                         <td>{approval.shiftMasterPre.fromTime} - {approval.shiftMasterPost.toTime}</td>
                                         <td>{approval.shiftMasterPost.fromTime} - {approval.shiftMasterPost.toTime}</td>
                                     </tr>

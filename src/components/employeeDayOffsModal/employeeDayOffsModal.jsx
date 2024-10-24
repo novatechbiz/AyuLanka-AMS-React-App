@@ -21,7 +21,7 @@ export const EmployeeDayOffsModal = ({ isOpen, onClose, employees }) => {
                 <tbody>
                     {employees.map(emp => (
                         <tr key={emp.id}>
-                            <td>{emp.employee.fullName}</td>
+                            <td>{emp.employee.employeeNumber} - {emp.employee.callingName}</td>
                             <td>{emp.employee.designation.name}</td>
                         </tr>
                     ))}

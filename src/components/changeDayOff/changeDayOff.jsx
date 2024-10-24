@@ -230,7 +230,7 @@ function ChangeDayOff() {
                                     <option value="">Select an Employee</option>
                                     {employees.map(employee => (
                                         <option key={employee.id} value={employee.id}>
-                                            {employee.fullName}
+                                            {employee.employeeNumber} - {employee.callingName}
                                         </option>
                                     ))}
                                 </select><br />
@@ -283,7 +283,7 @@ function ChangeDayOff() {
                             <tbody>
                                 {pendingApprovals.map((approval, index) => (
                                     <tr key={index}>
-                                        <td>{approval.dayOffChangeMaster.employee.fullName}</td>
+                                        <td>{approval.dayOffChangeMaster.employee.employeeNumber} - {approval.dayOffChangeMaster.employee.callingName}</td>
                                         <td>{new Date(approval.dayOffPre).toLocaleDateString()}</td>
                                         <td>{new Date(approval.dayOffPost).toLocaleDateString()}</td>
                                     </tr>
