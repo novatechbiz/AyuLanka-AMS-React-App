@@ -37,6 +37,8 @@ function UserTemplate(props) {
           <form onSubmit={handleSubmit}>
             {[
               { id: "fullName", label: "Full Name" },
+              { id: "callingName", label: "Calling Name" },
+              { id: "employeeNumber", label: "Employee Number" },
               { id: "address", label: "Address" },
               { id: "nic", label: "NIC" },
               { id: "joinedDate", label: "Joined Date", type: "date" },

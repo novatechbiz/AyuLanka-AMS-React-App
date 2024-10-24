@@ -269,11 +269,11 @@ function AppointmentScheduler() {
     };
 
     const getBackgroundColor = (employeeId, tokenNo) => {
-        if (employeeId == null && tokenNo == null) {
+        if ((employeeId == null || employeeId == "") && (tokenNo == null || tokenNo == "")) {
             return '#707070';
-        } else if(employeeId == null && tokenNo != null) {
+        } else if((employeeId == null || employeeId == "")  && (tokenNo != null && tokenNo != "")) {
             return '#ee0d0d';
-        } else if(employeeId != null && tokenNo == null) {
+        } else if((employeeId != null && employeeId != "") && (tokenNo == null || tokenNo == "")) {
             return '#ffc107';
         } else {
             return '#28a745';
@@ -382,7 +382,7 @@ function AppointmentScheduler() {
             // Trigger the modal if there's an overlap and the user hasn't confirmed
             if (isOverlap && !proceedWithOverlap) {
                 setNotification({ message: `The selected room is already in use during this time slot.`, type: 'error' });
-                return; // Stop form submission until user confirms
+                //return; // Stop form submission until user confirms
             }
 
             const scheduleDate = moment(appointmentData.scheduleDate).toDate();
@@ -392,7 +392,7 @@ function AppointmentScheduler() {
 
             if (!employeeSchedule) {
                 setNotification({ message: `The selected employee is not available on the selected date.`, type: 'error' });
-                return;
+               // return;
             }
 
             const st = new Date(startTime);
@@ -427,7 +427,7 @@ function AppointmentScheduler() {
             console.log('isValid:', isValid);
             if (!isValid) {
                 setNotification({ message: `The appointment time does not align with the ${selectedEmployee.fullName}'s working hours. Shift of the selected employee is ${employeeSchedule.shiftMaster.fromTime} - ${employeeSchedule.shiftMaster.toTime}`, type: 'error' });
-                return;
+                //return;
             }
         }
 
@@ -449,7 +449,7 @@ function AppointmentScheduler() {
 
             if (isResourceOverlap) {
                 setNotification({ message: `The selected room is already in use during this time slot.`, type: 'error' });
-                return;
+                //return;
             }
         }
         
@@ -581,7 +581,7 @@ function AppointmentScheduler() {
                 // Trigger the modal if there's an overlap and the user hasn't confirmed
                 if (isOverlap && !proceedWithOverlap) {
                     setNotification({ message: `The selected room is already in use during this time slot.`, type: 'error' });
-                    return; // Stop form submission until user confirms
+                    //return; // Stop form submission until user confirms
                 }
         
                 const employeeSchedule = await fetchEmployeeSchedule(selectedEmployee.id, scheduleDate);
@@ -589,7 +589,7 @@ function AppointmentScheduler() {
         
                 if (!employeeSchedule) {
                     setNotification({ message: `The selected employee is not available on the selected date.`, type: 'error' });
-                    return;
+                    //return;
                 }
 
                 const st = new Date(startTime);
@@ -623,7 +623,7 @@ function AppointmentScheduler() {
                 const isValid = isWithinWorkHours(startTimeString, endTimeString, convertedFromShift, convertedToShift);
                 if (!isValid) {
                     setNotification({ message: `The appointment time does not align with the ${selectedEmployee.fullName}'s working hours. Shift of the selected employee is ${employeeSchedule.shiftMaster.fromTime} - ${employeeSchedule.shiftMaster.toTime}`, type: 'error' });
-                    return;
+                    //return;
                 }
             }
 
@@ -645,7 +645,7 @@ function AppointmentScheduler() {
 
                 if (isResourceOverlap) {
                     setNotification({ message: `The selected room is already in use during this time slot.`, type: 'error' });
-                    return;
+                    //return;
                 }
             }
             
@@ -1201,28 +1201,6 @@ function AppointmentScheduler() {
         </div>
     </div>
 </Modal>
-{/* <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
-    <Modal.Header closeButton>
-        <Modal.Title>Confirm Appointment</Modal.Title>
-    </Modal.Header>
-    <Modal.Body>
-        The employee {selectedEmployee?.fullName} is already assigned to another appointment during this time. Do you want to proceed anyway?
-    </Modal.Body>
-    <Modal.Footer>
-        <button className="btn btn-danger" onClick={() => setShowConfirmModal(false)}>
-            Cancel
-        </button>
-        <button className="btn btn-success" onClick={() => {
-            setProceedWithOverlap(true);
-            setShowConfirmModal(false);
-            handleSubmit(); // Proceed with the submission
-        }}>
-            Proceed
-        </button>
-    </Modal.Footer>
-</Modal> */}
-
-
             <ConfirmationModal
                 isOpen={isConfirmModalOpen}
                 onClose={() => setIsConfirmModalOpen(false)}
