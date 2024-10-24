@@ -4,6 +4,32 @@ import "react-datepicker/dist/react-datepicker.css";
 import './employeeRoster.css';
 import { fetchEmployees, fetchShifts, fetchLeaves, saveRoster, fetchRosterDates } from '../../services/employeeRoster.js';
 import ModalComponent from '../modalComponent/modalComponent.jsx';
+import Select from 'react-select'; // Import react-select for searchable dropdowns
+
+const customStyles = {
+    control: (provided) => ({
+        ...provided,
+        backgroundColor: 'white',
+        color: 'black',
+    }),
+    menu: (provided) => ({
+        ...provided,
+        backgroundColor: 'white',
+    }),
+    option: (provided, state) => ({
+        ...provided,
+        backgroundColor: state.isSelected ? '#007bff' : 'white',
+        color: state.isSelected ? 'white' : 'black',
+        '&:hover': {
+            backgroundColor: '#007bff',
+            color: 'white',
+        },
+    }),
+    singleValue: (provided) => ({
+        ...provided,
+        color: 'black',
+    }),
+};
 
 function EmployeeRoster() {
     const [employees, setEmployees] = useState([]);
@@ -19,6 +45,12 @@ function EmployeeRoster() {
     const [successModalOpen, setSuccessModalOpen] = useState(false);
     const [errorModalOpen, setErrorModalOpen] = useState(false);
     const [rosterDates, setRosterDates] = useState([]);
+
+    // Filter state variables
+    const [selectedEmployee, setSelectedEmployee] = useState('');
+    const [selectedEmploymentType, setSelectedEmploymentType] = useState('');
+    const [selectedShift, setSelectedShift] = useState('');
+    const [filteredEmployees, setFilteredEmployees] = useState(employees);
 
     const handleSuccessClose = () => {
         setSuccessModalOpen(false);
@@ -78,6 +110,43 @@ function EmployeeRoster() {
             });
         }
     }, [startDate, endDate]);
+
+    useEffect(() => {
+        applyFilters();
+    }, [selectedEmployee, selectedEmploymentType, selectedShift]);
+
+    const applyFilters = () => {
+        let filtered = employees;
+
+        if (selectedEmployee) {
+            // Filter employees by ID or name based on the text input
+            filtered = filtered.filter(employee =>
+                employee.employeeNumber.includes(selectedEmployee) || 
+                employee.callingName.toLowerCase().includes(selectedEmployee.toLowerCase())
+            );
+        }
+        if (selectedEmploymentType) {
+            filtered = filtered.filter(employee => employee.employmentType.name === selectedEmploymentType.value);
+        }
+        if (selectedShift) {
+            filtered = filtered.filter(employee => employee.shiftMasterId === selectedShift.value);
+        }
+
+        setFilteredEmployees(filtered);
+    };
+
+    const employeeOptions = employees.map(employee => ({
+        value: employee.id,
+        label: `${employee.employeeNumber} - ${employee.callingName}`,
+    }));
+
+    const employmentTypeOptions = Array.from(new Set(employees.map(employee => employee.employmentType.name)))
+        .map(type => ({ value: type, label: type }));
+
+    const shiftOptions = shifts.map(shift => ({
+        value: shift.id,
+        label: `Shift ${shift.id} (${shift.fromTime} - ${shift.toTime})`,
+    }));
 
     const generateDaysAndWeeks = () => {
         setLoading(true); // Set loading state to true
@@ -202,8 +271,35 @@ function EmployeeRoster() {
                     <table>
                         <thead>
                             <tr>
-                                <th>Employee Name</th>
-                                <th>Shift</th>
+                                <th>Employee<br/>
+                                    <input
+                                        type="text"
+                                        value={selectedEmployee}
+                                        onChange={e => setSelectedEmployee(e.target.value)}
+                                        placeholder="Filter by Employee ID or Name"
+                                        className="custom-input"
+                                    />
+                                </th>
+                                <th>Employement Type
+                                    <Select
+                                        options={employmentTypeOptions}
+                                        value={selectedEmploymentType}
+                                        onChange={setSelectedEmploymentType}
+                                        isClearable
+                                        placeholder="All Employment Types"
+                                        styles={customStyles} // Apply custom styles here
+                                    />
+                                </th>
+                                <th>Shift
+                                    <Select
+                                        options={shiftOptions}
+                                        value={selectedShift}
+                                        onChange={setSelectedShift}
+                                        isClearable
+                                        placeholder="All Shifts"
+                                        styles={customStyles} // Apply custom styles here
+                                    />
+                                </th>
                                 {days.map((day, index) => (
                                     <th key={index} className={day.dayClass}>
                                         {day.dayOfWeek}<br/>{day.formattedDate}
@@ -212,9 +308,10 @@ function EmployeeRoster() {
                             </tr>
                         </thead>
                         <tbody>
-                            {employees.map(employee => (
+                            {filteredEmployees.map(employee => (
                                 <tr key={employee.id}>
-                                    <td>{employee.fullName}</td>
+                                    <td>{employee.employeeNumber} - {employee.callingName}</td>
+                                    <td>{employee.employmentType.name}</td>
                                     <td>
                                         <select className='form-control' style={{width:'fit-content'}} value={employee.shiftMasterId || ''} onChange={(e) => {/* handle shift change */}}>
                                             {shifts.map(shift => (

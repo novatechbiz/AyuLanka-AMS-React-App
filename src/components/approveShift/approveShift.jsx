@@ -124,7 +124,7 @@ function ApproveShift() {
                                         onChange={handleSelectAll}
                                     />
                                 </th>
-                                <th>Employee Name</th>
+                                <th>Employee</th>
                                 <th>Date</th>
                                 <th>Shift Before</th>
                                 <th>Shift After</th>
@@ -140,7 +140,7 @@ function ApproveShift() {
                                             onChange={() => handleSelectRequest(request.id)}
                                         />
                                     </td>
-                                    <td>{request.shiftChangeMaster.employee.fullName}</td>
+                                    <td>{request.shiftChangeMaster.employee.employeeNumber} - {request.shiftChangeMaster.employee.callingName}</td>
                                     <td>{new Date(request.staffRoster.dayOffDate).toLocaleDateString()}</td>
                                     <td>{request.shiftMasterPre.fromTime} - {request.shiftMasterPre.toTime}</td>
                                     <td>{request.shiftMasterPost.fromTime} - {request.shiftMasterPost.toTime}</td>

@@ -101,7 +101,7 @@ function UserTemplate(props) {
             <table className="table table-striped">
               <thead>
                 <tr>
-                  <th>Full Name</th>
+                  <th>Employee</th>
                   <th>NIC</th>
                   <th className="actions">Actions</th>
                 </tr>
@@ -109,7 +109,7 @@ function UserTemplate(props) {
               <tbody>
                 {users.map((user) => (
                   <tr key={user.id}>
-                    <td>{user.fullName}</td>
+                    <td>{user.employeeNumber} - {user.callingName}</td>
                     <td>{user.nic}</td>
                     <td className="actions">
                       <button

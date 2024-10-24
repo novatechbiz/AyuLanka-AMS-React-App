@@ -710,24 +710,6 @@ function AppointmentScheduler() {
             setShowModal(true);
         }
     };
-    
-    
-
-    // function convertTimeToDateTime(timeStr, baseDate) {
-    //     const [hours, minutes, seconds] = timeStr.split(':').map(Number);
-
-    //     // Create a new Date object based on the baseDate to avoid mutating it
-    //     let dateTime = new Date(baseDate);
-    //     dateTime.setHours(hours, minutes, seconds, 0);
-
-    //     // Adjust the date object if the time indicates "00:00:00" which means midnight, i.e., start of the next day
-    //     if (timeStr === "00:00:00") {
-    //         dateTime.setDate(dateTime.getDate() + 1);
-    //         dateTime.setHours(0, 0, 0, 0);
-    //     }
-
-    //     return dateTime;
-    // }
 
     useEffect(() => {
         console.log("Current events updated:", currentEvents);
@@ -1057,50 +1039,7 @@ function AppointmentScheduler() {
                             <input className={`form-control ${formErrors.contactNo ? 'is-invalid' : ''}`} type="text" id="contactNo" name="contactNo" value={appointmentData.contactNo} onChange={handleInputChange} required />
                         </div>
                     </div>
-                    {/* <div className="row">
-                        <div className="col-md-12 form-group">
-                            <label htmlFor="contactNo">Contact Number <span className="text-danger">*</span></label>
-                            <input className={`form-control ${formErrors.contactNo ? 'is-invalid' : ''}`} type="text" id="contactNo" name="contactNo" value={appointmentData.contactNo} onChange={handleInputChange} required />
-                        </div>
-                    </div> */}
                     <div className="row">
-                        {/* <div className="col-md-6 col-sm-6 form-group">
-                            <label htmlFor="treatmentTypeId">Treatment Type(s) <span className="text-danger">*</span></label>
-                            <select 
-                                className={`form-control ${formErrors.treatmentTypeId ? 'is-invalid' : ''}`} 
-                                id="treatmentTypeId" 
-                                name="treatmentTypeId" 
-                                value={appointmentData.treatmentTypeId} 
-                                onChange={handleMultipleTreatmentTypeChange} 
-                                multiple
-                                required
-                            >
-                                <option value="" disabled>Select Treatment Types</option>
-                                {treatmentTypes.map(type => (
-                                    <option key={type.id} value={type.id}>{type.treatmentType.name}</option>
-                                ))}
-                            </select>
-                        </div> */}
-                        {/* <div className="col-md-6 col-sm-6 form-group">
-                            <label htmlFor="treatmentTypeId">Treatment Type(s) <span className="text-danger">*</span></label>
-                            <Autocomplete
-                                multiple
-                                id="treatmentTypeId"
-                                options={treatmentTypes} // Options to select
-                                getOptionLabel={(option) => option.treatmentType.name} // Label for each option
-                                value={treatmentTypes.filter(type => appointmentData.treatmentTypeId.includes(type.id))} // Pre-selected values
-                                onChange={handleMultipleTreatmentTypeChange} // Handle selection
-                                isOptionEqualToValue={(option, value) => option.id === value.id} // Compare options with selected values
-                                renderInput={(params) => (
-                                    <TextField 
-                                        {...params} 
-                                        error={Boolean(formErrors.treatmentTypeId)}
-                                        helperText={formErrors.treatmentTypeId || ''} 
-                                        variant="outlined"
-                                    />
-                                )}
-                            />
-                        </div> */}
                         <div className="col-md-12 col-sm-12 form-group">
                             <label htmlFor="treatmentTypeId">Treatment Type(s) <span className="text-danger">*</span></label>
                             <Autocomplete
@@ -1161,7 +1100,7 @@ function AppointmentScheduler() {
                             <label htmlFor="employeeId">Employee</label>
                             <select className={`form-control ${formErrors.employeeId ? 'is-invalid' : ''}`} id="employeeId" name="employeeId" value={appointmentData.employeeId} onChange={handleInputChange} required>
                                 <option value="" disabled>Select an Employee</option>
-                                {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.fullName}</option>)}
+                                {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.employeeNumber} - {emp.callingName}</option>)}
                             </select>
                         </div>
                         <div className="col-md-6 form-group">

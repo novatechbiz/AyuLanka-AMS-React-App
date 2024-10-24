@@ -218,7 +218,7 @@ function UpdateRoster() {
                                 if (!employee) return null;
                                 return (
                                     <tr key={detail.employeeId}>
-                                        <td>{employee.fullName}</td>
+                                        <td>{employee.employeeNumber} - {employee.callingName}</td>
                                         <td>
                                             <select className='form-control' style={{width:'fit-content'}} defaultValue={detail.shiftMasterId}>
                                                 {shifts.map(shift => (

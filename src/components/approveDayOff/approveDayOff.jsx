@@ -123,7 +123,7 @@ function ApproveDayOffs() {
                                         onChange={handleSelectAll}
                                     />
                                 </th>
-                                <th>Employee Name</th>
+                                <th>Employee</th>
                                 <th>Day Off Date Before</th>
                                 <th>Day Off Date After</th>
                             </tr>
@@ -138,7 +138,7 @@ function ApproveDayOffs() {
                                             onChange={() => handleSelectRequest(request.id)}
                                         />
                                     </td>
-                                    <td>{request.dayOffChangeMaster.employee.fullName}</td>
+                                    <td>{request.dayOffChangeMaster.employee.employeeNumber} - {request.dayOffChangeMaster.employee.callingName}</td>
                                     <td>{new Date(request.dayOffPre).toLocaleDateString()}</td>
                                     <td>{new Date(request.dayOffPost).toLocaleDateString()}</td>
                                 </tr>
