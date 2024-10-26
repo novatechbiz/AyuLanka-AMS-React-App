@@ -156,7 +156,7 @@ function AppointmentScheduler() {
                 extendedProps: {
                     contactNo: appointment.contactNo,
                     tokenNo: appointment.tokenNo,
-                    employeeName: appointment.employee ? appointment.employee.fullName : "", // Add employee name
+                    employeeName: appointment.employee ? appointment.employee.callingName : "", // Add employee name
                     treatmentTypes: treatmentTypes  // Add treatment types joined by commas
                 }
             };
