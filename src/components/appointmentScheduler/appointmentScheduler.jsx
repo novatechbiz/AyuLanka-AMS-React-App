@@ -18,22 +18,23 @@ import { EmployeeLeavesModal } from '../employeeLeavesModal/employeeLeavesModal.
 import { EmployeeShiftsModal } from '../employeeShiftsModal/employeeShiftsModal.jsx';
 import StarIcon from '@mui/icons-material/Star';
 import { Autocomplete, TextField } from '@mui/material';
+import { ConfirmationModalForValidation } from '../confirmationModalForValidation/confirmationModalForValidation.jsx';
 
 Modal.setAppElement('#root');
 
 function AppointmentScheduler() {
     const [currentEvents, setCurrentEvents] = useState([]);
+    const [dropEvent, setDropEvent] = useState([]);
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [selectedResource, setSelectedResource] = useState({});
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [isConfirmModalOpenForValidation, setIsConfirmModalOpenForValidation] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [modalContent, setModalContent] = useState({type: '', message: ''});
-    const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [proceedWithOverlap, setProceedWithOverlap] = useState(false);
-    const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [appointmentData, setAppointmentData] = useState({
         scheduleDate: new Date(),
         employeeId: '',
+        secondaryEmployeeId: '',
         customerName: '',
         contactNo: '',
         tokenNo: '',
@@ -48,6 +49,7 @@ function AppointmentScheduler() {
     const [treatmentTypes, setTreatmentTypes] = useState([]);
     const [resources, setResources] = useState([]);
     const [selectedEventId, setSelectedEventId] = useState(null);
+    const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [notification, setNotification] = useState({ message: '', type: '' });
     const [formErrors, setFormErrors] = useState({
         customerName: false,
@@ -63,6 +65,13 @@ function AppointmentScheduler() {
     const [dayOffsData, setDayOffsData] = useState([]);
     const [leavesData, setLeavesData] = useState([]);
     const [shiftsData, setShiftsData] = useState([]);
+    const [startTime, setStartTime] = useState(new Date());
+    const [endTime, setEndTime] = useState(new Date());
+    const [actualStartTime, setActualStartTime] = useState(null);
+    const [actualEndTime, setActualEndTime] = useState(null);
+    const [isConfirmed, setIsConfirmed] = useState(false);
+    const [isClickedHandleSubmit, setIsClickedHandleSubmit] = useState(false);
+    const [isEventDrop, setIsEventDrop] = useState(false);
 
     // Fetch Employees and Treatment Types from API
     useEffect(() => {
@@ -152,7 +161,7 @@ function AppointmentScheduler() {
                 end: end,
                 resourceId: appointment.locationId.toString(),
                 employeeId: appointment.employeeId,
-                backgroundColor: getBackgroundColor(appointment.employeeId, appointment.tokenNo),
+                backgroundColor: getBackgroundColor(appointment.employeeId, appointment.tokenNo, appointment.actualFromTime, appointment.actualToTime),
                 extendedProps: {
                     contactNo: appointment.contactNo,
                     tokenNo: appointment.tokenNo,
@@ -175,48 +184,6 @@ function AppointmentScheduler() {
             [name]: value
         }));
     };
-
-    // Handler for multiple treatment type selection
-    // const handleMultipleTreatmentTypeChange = (event) => {
-    //     const selectedOptions = Array.from(event.target.selectedOptions, option => option.value);
-    
-    //     // Set the selected treatment type IDs in state
-    //     setAppointmentData(prevState => ({
-    //         ...prevState,
-    //         treatmentTypeId: selectedOptions
-    //     }));
-
-    //     // Check if there's already a start time set
-    //     if (appointmentData.startTime) {
-    //         let totalDurationMilliseconds = 0; // Initialize total duration for multiple treatments
-
-    //         selectedOptions.forEach(option => {
-    //             const selectedTreatment = treatmentTypes.find(t => t.id.toString() === option);
-    //             console.log(`Dropdown changed: treatmentTypeId = ${selectedTreatment}`);  // Debugging line
-                
-    //             if (selectedTreatment) {
-    //                 let durationMilliseconds;
-    //                 if (selectedTreatment.treatmentType.durationHours) {
-    //                     // Calculate duration for the current treatment type
-    //                     durationMilliseconds = (selectedTreatment.treatmentType.durationHours * 3600 + 
-    //                                             (selectedTreatment.treatmentType.durationMinutes || 0) * 60) * 1000;
-                        
-    //                     totalDurationMilliseconds += durationMilliseconds; // Accumulate total duration
-    //                 }
-    //             }
-    //         });
-
-    //         // Calculate new end time based on the total duration
-    //         const newEndTime = new Date(appointmentData.startTime.getTime() + totalDurationMilliseconds);
-    //         setEndTime(newEndTime);
-
-    //         // Update endTime in appointmentData state
-    //         setAppointmentData(prevState => ({
-    //             ...prevState,
-    //             endTime: newEndTime
-    //         }));
-    //     }
-    // };
     
     // Handler for multiple treatment type selection
     const handleMultipleTreatmentTypeChange = (event, value) => {
@@ -268,20 +235,24 @@ function AppointmentScheduler() {
         setFormErrors(prevErrors => ({ ...prevErrors, scheduleDate: !date }));
     };
 
-    const getBackgroundColor = (employeeId, tokenNo) => {
+    const getBackgroundColor = (employeeId, tokenNo, actualStart, actualend) => {
         if ((employeeId == null || employeeId == "") && (tokenNo == null || tokenNo == "")) {
             return '#707070';
         } else if((employeeId == null || employeeId == "")  && (tokenNo != null && tokenNo != "")) {
             return '#ee0d0d';
         } else if((employeeId != null && employeeId != "") && (tokenNo == null || tokenNo == "")) {
             return '#ffc107';
+        } else if((employeeId != null && employeeId != "") && (tokenNo != null && tokenNo != "") 
+        && (actualStart != null && actualStart != "") && (actualend != null && actualend != "")) {
+            return '#57aa57';
         } else {
-            return '#28a745';
+            return '#2c95e8'
         }
     };
     
 
     function formatTimeForCSharp(date) {
+        console.log('formatTimeForCSharp', date)
         const hours = date.getHours().toString().padStart(2, '0');
         const minutes = date.getMinutes().toString().padStart(2, '0');
         const seconds = date.getSeconds().toString().padStart(2, '0');
@@ -318,7 +289,9 @@ function AppointmentScheduler() {
     }
 
     const handleSubmit = async (event) => {
-        event.preventDefault();
+        console.log('handleSubmit appointmentData', appointmentData)
+        setIsClickedHandleSubmit(true)
+        if (event) event.preventDefault();
 
         setNotification({ message: '', type: '' });
 
@@ -380,9 +353,11 @@ function AppointmentScheduler() {
             });
 
             // Trigger the modal if there's an overlap and the user hasn't confirmed
-            if (isOverlap && !proceedWithOverlap) {
+            if (isOverlap && !isConfirmed) {
                 setNotification({ message: `The selected room is already in use during this time slot.`, type: 'error' });
-                //return; // Stop form submission until user confirms
+                console.log('setIsConfirmModalOpenForValidation1')
+                setIsConfirmModalOpenForValidation(true);
+                return; // Stop form submission until user confirms
             }
 
             const scheduleDate = moment(appointmentData.scheduleDate).toDate();
@@ -390,9 +365,11 @@ function AppointmentScheduler() {
 
             const employeeSchedule = await fetchEmployeeSchedule(selectedEmployee.id, scheduleDate);
 
-            if (!employeeSchedule) {
+            if (!employeeSchedule && !isConfirmed) {
                 setNotification({ message: `The selected employee is not available on the selected date.`, type: 'error' });
-               // return;
+                console.log('setIsConfirmModalOpenForValidation2')
+                setIsConfirmModalOpenForValidation(true);
+                return;
             }
 
             const st = new Date(startTime);
@@ -413,21 +390,25 @@ function AppointmentScheduler() {
                 hour12: false, // 24-hour format
               });
 
-            const convertedFromShift = employeeSchedule.shiftMaster.fromTime;
-            const convertedToShift = employeeSchedule.shiftMaster.toTime;
+            if(employeeSchedule) {
+                const convertedFromShift = employeeSchedule.shiftMaster.fromTime;
+                const convertedToShift = employeeSchedule.shiftMaster.toTime;
 
-            console.log('startTime:', startTime);
-            console.log('endTime:', endTime);
-            console.log('startTimeString:', startTimeString);
-            console.log('endTimeString:', endTimeString);
-            console.log('employeeSchedule.shiftMaster.fromTime:', employeeSchedule.shiftMaster.fromTime);
-            console.log('employeeSchedule.shiftMaster.toTime:', employeeSchedule.shiftMaster.toTime);
+                console.log('startTime:', startTime);
+                console.log('endTime:', endTime);
+                console.log('startTimeString:', startTimeString);
+                console.log('endTimeString:', endTimeString);
+                console.log('employeeSchedule.shiftMaster.fromTime:', employeeSchedule.shiftMaster.fromTime);
+                console.log('employeeSchedule.shiftMaster.toTime:', employeeSchedule.shiftMaster.toTime);
 
-            const isValid = isWithinWorkHours(startTimeString, endTimeString, convertedFromShift, convertedToShift);
-            console.log('isValid:', isValid);
-            if (!isValid) {
-                setNotification({ message: `The appointment time does not align with the ${selectedEmployee.fullName}'s working hours. Shift of the selected employee is ${employeeSchedule.shiftMaster.fromTime} - ${employeeSchedule.shiftMaster.toTime}`, type: 'error' });
-                //return;
+                const isValid = isWithinWorkHours(startTimeString, endTimeString, convertedFromShift, convertedToShift);
+
+                if (!isValid && !isConfirmed) {
+                    setNotification({ message: `The appointment time does not align with the ${selectedEmployee.fullName}'s working hours. Shift of the selected employee is ${employeeSchedule.shiftMaster.fromTime} - ${employeeSchedule.shiftMaster.toTime}`, type: 'error' });
+                    console.log('setIsConfirmModalOpenForValidation3')
+                    setIsConfirmModalOpenForValidation(true);
+                    return;
+                }
             }
         }
 
@@ -447,9 +428,11 @@ function AppointmentScheduler() {
                 return eventResourceId === appointmentData.resourceId && (isStartWithinEvent || isEndWithinEvent || isEventWithinNew);
             });
 
-            if (isResourceOverlap) {
+            if (isResourceOverlap && !isConfirmed) {
                 setNotification({ message: `The selected room is already in use during this time slot.`, type: 'error' });
-                //return;
+                console.log('setIsConfirmModalOpenForValidation4')
+                setIsConfirmModalOpenForValidation(true);
+                return;
             }
         }
         
@@ -463,14 +446,20 @@ function AppointmentScheduler() {
             TreatmentTypeId: parseInt(treatmentTypeId, 10) // Convert to integer
         }));
 
+        const actualStartTime = appointmentData.actualStartTime ? formatTimeForCSharp(appointmentData.actualStartTime) : null
+        const actualEndTime = appointmentData.actualEndTime ? formatTimeForCSharp(appointmentData.actualEndTime) : null
+
         const appointmentDataToSend = {
             Id: appointmentData.id != 0 ? appointmentData.id : 0,
             ScheduleDate: appointmentData.scheduleDate,
             EmployeeId: appointmentData.employeeId ? appointmentData.employeeId : 0,
+            SecondaryEmployeeId: appointmentData.secondaryEmployeeId ? appointmentData.secondaryEmployeeId : 0,
             CustomerName: appointmentData.customerName,
             ContactNo: appointmentData.contactNo,
             FromTime: formatTimeForCSharp(appointmentData.startTime), 
             ToTime: formatTimeForCSharp(appointmentData.endTime),
+            ActualFromTime: actualStartTime, 
+            ActualToTime: actualEndTime,
             EnteredBy: userId,
             EnteredDate: new Date().toISOString(),
             TokenNo: appointmentData.tokenNo,
@@ -480,30 +469,33 @@ function AppointmentScheduler() {
         };
 
         console.log('appointmentDataToSend', appointmentDataToSend);
-        try {
-            const createdAppointment = await addAppointment(appointmentDataToSend);
-            console.log('Appointment created:', createdAppointment);
-            if (appointmentData.id !== 0 && appointmentData.id !== undefined) {
-                setModalContent({ type: 'success', message: 'Appointment updated successfully!' });
-            } else {
-                setModalContent({ type: 'success', message: 'Appointment created successfully!' });
+        console.log('isConfirmModalOpenForValidation', isConfirmModalOpenForValidation)
+        //if(!isConfirmModalOpenForValidation) {
+            try {
+                const createdAppointment = await addAppointment(appointmentDataToSend);
+                console.log('Appointment created:', createdAppointment);
+                if (appointmentData.id !== 0 && appointmentData.id !== undefined) {
+                    setModalContent({ type: 'success', message: 'Appointment updated successfully!' });
+                } else {
+                    setModalContent({ type: 'success', message: 'Appointment created successfully!' });
+                }
+                setShowModal(true);
+            } catch (error) {
+                console.error('Failed to create appointment:', error);
+                if (appointmentData.id != 0 && appointmentData.id != undefined) {
+                    setModalContent({ type: 'error', message: 'Failed to update appointment' });
+                } else {
+                    setModalContent({ type: 'error', message: 'Failed to create appointment' });
+                }
+                setShowModal(true);
+                return;
             }
-            setShowModal(true);
-        } catch (error) {
-            console.error('Failed to create appointment:', error);
-            if (appointmentData.id != 0 && appointmentData.id != undefined) {
-                setModalContent({ type: 'error', message: 'Failed to update appointment' });
-            } else {
-                setModalContent({ type: 'error', message: 'Failed to create appointment' });
-            }
-            setShowModal(true);
-            return;
-        }
-
-        refreshAppointments();  // Fetch appointments again or adjust state directly
-        setModalIsOpen(false);
-        resetAppointmentForm(); // Clear or reset the form state
-        setSelectedResource({});
+    
+            refreshAppointments();  // Fetch appointments again or adjust state directly
+            setModalIsOpen(false);
+            resetAppointmentForm(); // Clear or reset the form state
+            setSelectedResource({});
+       // }
     };
 
 
@@ -518,6 +510,7 @@ function AppointmentScheduler() {
             scheduleDate: new Date(),
             treatmentTypeId: '',
             employeeId: '',
+            secondaryEmployeeId: '',
             customerName: '',
             contactNo: '',
             tokenNo: '',
@@ -530,15 +523,17 @@ function AppointmentScheduler() {
     
     const handleEventDrop = async (info) => {
         const { event } = info;
+        setDropEvent(info)
         const startTime = moment(event.start).toDate();
         const endTime = moment(event.end).toDate();
+        setIsEventDrop(true)
     
         try {
             const appointmentDetails = await fetchAppointmentDetails(event.id);
 
             const treatmentTypeIds = appointmentDetails.appointmentTreatments.map(treatment => treatment.treatmentTypeId);
 
-            console.log('treatmentTypeIds', treatmentTypeIds);
+            console.log('treatmentTypeIds', appointmentDetails);
     
             const treatmentTypesbyLocations = await fetchTreatmentTypesByLocation();    
             
@@ -579,17 +574,21 @@ function AppointmentScheduler() {
                 });
         
                 // Trigger the modal if there's an overlap and the user hasn't confirmed
-                if (isOverlap && !proceedWithOverlap) {
+                if (isOverlap && !isConfirmed) {
                     setNotification({ message: `The selected room is already in use during this time slot.`, type: 'error' });
-                    //return; // Stop form submission until user confirms
+                    console.log('setIsConfirmModalOpenForValidation5')
+                    setIsConfirmModalOpenForValidation(true);
+                    return; // Stop form submission until user confirms
                 }
         
                 const employeeSchedule = await fetchEmployeeSchedule(selectedEmployee.id, scheduleDate);
 
         
-                if (!employeeSchedule) {
+                if (!employeeSchedule && !isConfirmed) {
                     setNotification({ message: `The selected employee is not available on the selected date.`, type: 'error' });
-                    //return;
+                    console.log('setIsConfirmModalOpenForValidation6')
+                    setIsConfirmModalOpenForValidation(true);
+                    return;
                 }
 
                 const st = new Date(startTime);
@@ -610,20 +609,25 @@ function AppointmentScheduler() {
                     hour12: false, // 24-hour format
                 });
 
-                const convertedFromShift = employeeSchedule.shiftMaster.fromTime;
-                const convertedToShift = employeeSchedule.shiftMaster.toTime;
+                if(employeeSchedule){
+                    const convertedFromShift = employeeSchedule.shiftMaster.fromTime;
+                    const convertedToShift = employeeSchedule.shiftMaster.toTime;
 
-                console.log('startTime:', startTime);
-                console.log('endTime:', endTime);
-                console.log('startTimeString:', startTimeString);
-                console.log('endTimeString:', endTimeString);
-                console.log('convertedFromShift:', convertedFromShift);
-                console.log('convertedToShift:', convertedToShift);
-        
-                const isValid = isWithinWorkHours(startTimeString, endTimeString, convertedFromShift, convertedToShift);
-                if (!isValid) {
-                    setNotification({ message: `The appointment time does not align with the ${selectedEmployee.fullName}'s working hours. Shift of the selected employee is ${employeeSchedule.shiftMaster.fromTime} - ${employeeSchedule.shiftMaster.toTime}`, type: 'error' });
-                    //return;
+                    console.log('startTime:', startTime);
+                    console.log('endTime:', endTime);
+                    console.log('startTimeString:', startTimeString);
+                    console.log('endTimeString:', endTimeString);
+                    console.log('convertedFromShift:', convertedFromShift);
+                    console.log('convertedToShift:', convertedToShift);
+            
+                    const isValid = isWithinWorkHours(startTimeString, endTimeString, convertedFromShift, convertedToShift);
+
+                    if (!isValid && !isConfirmed) {
+                        setNotification({ message: `The appointment time does not align with the ${selectedEmployee.fullName}'s working hours. Shift of the selected employee is ${employeeSchedule.shiftMaster.fromTime} - ${employeeSchedule.shiftMaster.toTime}`, type: 'error' });
+                        console.log('setIsConfirmModalOpenForValidation7')
+                        setIsConfirmModalOpenForValidation(true);
+                        return;
+                    }
                 }
             }
 
@@ -643,9 +647,11 @@ function AppointmentScheduler() {
                     return eventResourceId === appointmentData.resourceId && (isStartWithinEvent || isEndWithinEvent || isEventWithinNew);
                 });
 
-                if (isResourceOverlap) {
+                if (isResourceOverlap && !isConfirmed) {
                     setNotification({ message: `The selected room is already in use during this time slot.`, type: 'error' });
-                    //return;
+                    console.log('setIsConfirmModalOpenForValidation8')
+                    setIsConfirmModalOpenForValidation(true);
+                    return;
                 }
             }
             
@@ -672,8 +678,11 @@ function AppointmentScheduler() {
                 scheduleDate: scheduleDate,
                 startTime: startTime,
                 endTime: endTime,
-                //treatmentTypeId: appointmentDetails.treatmentTypeId.toString(),
+                actualStartTime: appointmentDetails.actualFromTime,
+                actualEndTime: appointmentDetails.actualToTime,
+                treatmentTypeId: treatmentTypeIds,
                 employeeId: appointmentDetails.employeeId ? appointmentDetails.employeeId.toString() : 0,
+                secondaryEmployeeId: appointmentDetails.secondaryEmployeeId ? appointmentDetails.secondaryEmployeeId.toString() : 0,
                 customerName: appointmentDetails.customerName,
                 contactNo: appointmentDetails.contactNo,
                 tokenNo: appointmentDetails.tokenNo,
@@ -687,10 +696,13 @@ function AppointmentScheduler() {
                 ScheduleDate: moment(scheduleDate).toISOString(),
                 //TreatmentTypeId: filteredTreatmentType.id,
                 EmployeeId: appointmentDetails.employeeId ? appointmentDetails.employeeId : 0,
+                SecondaryEmployeeId: appointmentDetails.secondaryEmployeeId ? appointmentDetails.secondaryEmployeeId : 0,
                 CustomerName: appointmentDetails.customerName,
                 ContactNo: appointmentDetails.contactNo,
                 FromTime: moment(startTime).format('HH:mm:ss'),
                 ToTime: moment(endTime).format('HH:mm:ss'),
+                ActualFromTime: appointmentDetails.actualFromTime,
+                ActualToTime: appointmentDetails.actualToTime,
                 EnteredBy: userId,
                 EnteredDate: moment().toISOString(),
                 TokenNo: appointmentDetails.tokenNo,
@@ -732,6 +744,25 @@ function AppointmentScheduler() {
         setModalIsOpen(false);  // Close the main modal
     };
 
+    const handleValidationConfirmation = async () => {
+        console.log('handleValidationConfirmation')
+        setIsConfirmModalOpenForValidation(false);  // Close the confirmation modal
+        setModalIsOpen(false);  // Close the main modal
+        setIsConfirmed(true); 
+    };
+
+    // Use useEffect to handle submit after confirmation modal closes
+    useEffect(() => {
+        if (!isConfirmModalOpenForValidation && isConfirmed) {
+            if(isClickedHandleSubmit){
+                handleSubmit();
+            } else if(isEventDrop) {
+                handleEventDrop(dropEvent);
+            }          
+            setIsConfirmed(false);
+        }
+    }, [isConfirmModalOpenForValidation, isConfirmed, dropEvent, isClickedHandleSubmit, isEventDrop]);
+
     const closeModal = () => {
         console.log("Opening confirmation modal");
         setIsConfirmModalOpen(true);  // This should trigger the modal to open
@@ -745,6 +776,11 @@ function AppointmentScheduler() {
     useEffect(() => {
         console.log("isConfirmModalOpen changed to: ", isConfirmModalOpen);
     }, [isConfirmModalOpen]);
+
+    // Add useEffect to monitor the state of isConfirmModalOpenForValidation
+    useEffect(() => {
+        console.log("isConfirmModalOpenForValidation changed to: ", isConfirmModalOpenForValidation);
+    }, [isConfirmModalOpenForValidation]);
 
     function renderEventContent(eventInfo) {
         return (
@@ -780,9 +816,6 @@ function AppointmentScheduler() {
             </>
         );
     }
-
-    const [startTime, setStartTime] = useState(new Date());
-    const [endTime, setEndTime] = useState(new Date());
 
     const handleTimeChange = (date, name) => {
         console.log('treatmentTypes', treatmentTypes);
@@ -853,12 +886,29 @@ function AppointmentScheduler() {
             }));
         }
     };
-    
-    
 
-    useEffect(() => {
-        console.log("appointment dataaaaaaaa:", appointmentData);
-    }, [appointmentData]);
+
+    const handleActualTimeChange = (date, name) => {
+        
+        if (name === 'actualStartTime') {
+            setActualStartTime(date);
+    
+            // Update the appointmentData state with the new startTime and calculated endTime
+            setAppointmentData(prevState => ({
+                ...prevState,
+                actualStartTime: date,
+            }));
+        }
+
+        if (name === 'actualEndTime') {
+            setActualEndTime(date);
+            // Update the appointmentData state with the new startTime and calculated endTime
+            setAppointmentData(prevState => ({
+                ...prevState,
+                actualEndTime: date
+            }));
+        }
+    };
     
 
     const handleEventClick = async (clickInfo) => {
@@ -878,6 +928,9 @@ function AppointmentScheduler() {
     
             const startTime = new Date(`${appointmentDetails.scheduleDate.split('T')[0]}T${appointmentDetails.fromTime}`);
             const endTime = new Date(`${appointmentDetails.scheduleDate.split('T')[0]}T${appointmentDetails.toTime}`);
+
+            const actualStartTime = appointmentDetails.actualFromTime ? new Date(`${appointmentDetails.scheduleDate.split('T')[0]}T${appointmentDetails.actualFromTime}`): null;
+            const actualEndTime = appointmentDetails.actualToTime ? new Date(`${appointmentDetails.scheduleDate.split('T')[0]}T${appointmentDetails.actualToTime}`) : null;
     
             // Make sure the selected resource exists in your state before setting it
             const foundResource = resources.find(r => r.id === appointmentDetails.locationId);
@@ -892,7 +945,7 @@ function AppointmentScheduler() {
             const treatmentTypesbyLocations = await fetchTreatmentTypesByLocation();
             //const treatmentTypes = treatmentTypesbyLocations.filter(item => item.locationId === foundResource.id);
             setTreatmentTypes(treatmentTypesbyLocations);
-
+            console.log('appointmentDetails newwwwwwwwww', appointmentDetails)
             const treatmentTypeIds = appointmentDetails.appointmentTreatments.map(treatment => treatment.treatmentTypeId);
 
             // Ensure appointment treatments are mapped correctly
@@ -901,13 +954,17 @@ function AppointmentScheduler() {
                 AppoinmentId: treatment.appoinmentId, // Since it's a new appointment
                 TreatmentTypeId: parseInt(treatment.treatmentTypeId, 10) // Convert to integer
             }));
-    
+            console.log('startTime', startTime, ' endTime', endTime)
+            console.log('actualStartTime', actualStartTime, ' actualEndTime', actualEndTime)
             setAppointmentData({
                 id: event.id,
                 scheduleDate: appointmentDetails.scheduleDate,
                 startTime: startTime,
                 endTime: endTime,
+                actualStartTime: actualStartTime,
+                actualEndTime: actualEndTime,
                 employeeId: appointmentDetails.employeeId ? appointmentDetails.employeeId.toString() : "",
+                secondaryEmployeeId: appointmentDetails.secondaryEmployeeId ? appointmentDetails.secondaryEmployeeId.toString() : "",
                 customerName: appointmentDetails.customerName,
                 contactNo: appointmentDetails.contactNo,
                 tokenNo: appointmentDetails.tokenNo,
@@ -919,11 +976,18 @@ function AppointmentScheduler() {
     
             setStartTime(startTime);
             setEndTime(endTime);
+            setActualStartTime(actualStartTime);
+            setActualEndTime(actualEndTime);
             setModalIsOpen(true);
         } catch (error) {
             console.error('Error fetching appointment details:', error);
         }
     };
+
+    
+    useEffect(() => {
+        console.log("appointment dataaaaaaaa:", appointmentData);
+    }, [appointmentData]);
 
     return (
         <div>
@@ -952,6 +1016,7 @@ function AppointmentScheduler() {
                         resourceId: selectInfo.resource.id,
                         treatmentTypeId: '',
                         employeeId: '',
+                        secondaryEmployeeId: '',
                         startTime: selectInfo.start,
                         customerName: '',
                         contactNo: ''
@@ -981,7 +1046,7 @@ function AppointmentScheduler() {
 
 <Modal
     isOpen={modalIsOpen}
-    onRequestClose={() => setIsConfirmModalOpen(false)}
+    onRequestClose={() => setModalIsOpen(false)}
     className="Modal custom-modal"
     closeTimeoutMS={300}
     overlayClassName="Overlay"
@@ -1099,13 +1164,48 @@ function AppointmentScheduler() {
                         <div className="col-md-6 form-group">
                             <label htmlFor="employeeId">Employee</label>
                             <select className={`form-control ${formErrors.employeeId ? 'is-invalid' : ''}`} id="employeeId" name="employeeId" value={appointmentData.employeeId} onChange={handleInputChange} required>
-                                <option value="" disabled>Select an Employee</option>
+                                <option value="">Select an Employee</option>
                                 {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.employeeNumber} - {emp.callingName}</option>)}
                             </select>
                         </div>
                         <div className="col-md-6 form-group">
+                            <label htmlFor="secondaryEmployeeId">Secondary Employee</label>
+                            <select className={`form-control ${formErrors.secondaryEmployeeId ? 'is-invalid' : ''}`} id="secondaryEmployeeId" name="secondaryEmployeeId" value={appointmentData.secondaryEmployeeId} onChange={handleInputChange}>
+                                <option value="">Select an Employee</option>
+                                {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.employeeNumber} - {emp.callingName}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                    <div className="row">
+                        <div className="col-md-6 form-group">
                             <label htmlFor="tokenNo">Token Number</label>
                             <input className="form-control" type="text" id="tokenNo" name="tokenNo" value={appointmentData.tokenNo} onChange={handleInputChange} />
+                        </div>
+                        <div className="col-md-3 col-sm-3 form-group">
+                            <label htmlFor="actualStartTime">Actual Start Time</label><br/>
+                            <DatePicker
+                                className="form-control"
+                                selected={actualStartTime}
+                                onChange={(date) => handleActualTimeChange(date, 'actualStartTime')}
+                                showTimeSelect
+                                showTimeSelectOnly
+                                timeIntervals={15}
+                                timeCaption="Time"
+                                dateFormat="h:mm aa"
+                            />
+                        </div>
+                        <div className="col-md-3 col-sm-3 form-group">
+                            <label htmlFor="actualEndTime">Actual End Time</label><br/>
+                            <DatePicker
+                                className="form-control"
+                                selected={actualEndTime}
+                                onChange={(date) => handleActualTimeChange(date, 'actualEndTime')}
+                                showTimeSelect
+                                showTimeSelectOnly
+                                timeIntervals={15}
+                                timeCaption="Time"
+                                dateFormat="h:mm aa"
+                            />
                         </div>
                     </div>
                     {/* New Remark Field */}
@@ -1145,6 +1245,13 @@ function AppointmentScheduler() {
                 onClose={() => setIsConfirmModalOpen(false)}
                 onConfirm={handleDelete}
             />
+
+            <ConfirmationModalForValidation
+                isOpen={isConfirmModalOpenForValidation}
+                onClose={() => setIsConfirmModalOpenForValidation(false)}
+                onConfirm={handleValidationConfirmation}
+            />
+
             <AppointmentModalComponent
                 show={showModal}
                 onClose={closeModal}
