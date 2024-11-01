@@ -1,0 +1,65 @@
+/* Confirmation Modal Overlay */
+.confirmation-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6); /* Slightly more opaque for better focus on modal */
+    z-index: 1050; /* Ensure it's on top */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Confirmation Modal Content Box */
+.confirmation-modal .modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px; /* Rounded corners for modern look */
+    box-shadow: 0 15px 25px rgba(0, 0, 0, 0.2); /* Soft shadow for 3D effect */
+    width: auto; /* Auto width based on content */
+    max-width: 90%; /* Maximum width to avoid too wide modal on large screens */
+    text-align: center; /* Center align the text for better readability */
+    overflow: hidden;
+}
+
+/* Confirmation Modal Heading */
+.confirmation-modal h4 {
+    margin-bottom: 15px; /* Space between the title and content */
+    color: #333; /* Dark color for text for better readability */
+    font-size: 1.5rem; /* Larger font size for heading */
+}
+
+/* Confirmation Modal Paragraph */
+.confirmation-modal p {
+    margin-bottom: 20px; /* Space before buttons */
+    font-size: 1.2rem; /* Readable text size */
+    color: #555; /* Soft color for text */
+}
+
+/* Confirmation Modal Buttons */
+.confirmation-modal button {
+    padding: 10px 20px; /* Padding for buttons */
+    margin: 0 10px; /* Margin between buttons */
+    border: none; /* No border */
+    border-radius: 5px; /* Rounded borders for buttons */
+    cursor: pointer; /* Pointer cursor on hover */
+    font-size: 1rem; /* Button text size */
+    color: white; /* Text color for buttons */
+    background-color: green; /* Blue background for confirm button */
+    flex: 1; /* Flex grow to fill space */
+    transition: background-color 0.3s; /* Smooth transition for hover effect */
+}
+
+.confirmation-modal button:hover {
+    background-color: green; /* Darker blue on hover for confirm button */
+}
+
+.confirmation-modal button.cancel {
+    background-color: #6c757d; /* Grey background for cancel button */
+}
+
+.confirmation-modal button.cancel:hover {
+    background-color: #5a6268; /* Darker grey on hover for cancel button */
+}
