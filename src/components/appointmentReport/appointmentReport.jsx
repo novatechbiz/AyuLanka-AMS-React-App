@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import * as XLSX from 'xlsx'; // Import XLSX library
 import './appointmentReport.css';
+import { fetchAppoitmentByDate } from '../../services/appointmentSchedulerApi';
 
 const AppointmentReport = () => {
     const [appointments, setAppointments] = useState([]);
@@ -10,10 +11,10 @@ const AppointmentReport = () => {
 
     const fetchAppointments = async (date) => {
         try {
-            const response = await axios.get(`https://localhost:7074/api/AppointmentSchedule/ByDate/${date}`);
-            setAppointments(response.data);
+            const data = await fetchAppoitmentByDate(date);
+            setAppointments(data);
         } catch (error) {
-            console.error('Error fetching appointments:', error);
+            console.error('Error fetching day offs data:', error);
         }
     };
 
