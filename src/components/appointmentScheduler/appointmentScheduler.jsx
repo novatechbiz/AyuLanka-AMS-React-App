@@ -815,23 +815,48 @@ function AppointmentScheduler() {
     }, [isConfirmModalOpenForValidation]);
 
     function renderEventContent(eventInfo) {
+            
+        // Check if title length exceeds a certain limit to conditionally adjust font size
+        const title = eventInfo.event.title;
+        const isLongTitle = title.length > 20; // Adjust this limit based on your needs
+
         // Prepare hover text with <br /> for line breaks
         const hoverText = `
+            ${title ? `Patient Name: ${title}<br />` : ''}
             ${eventInfo.event.extendedProps.treatmentTypes ? `Treatment Types: ${eventInfo.event.extendedProps.treatmentTypes}<br />` : ''}
             ${eventInfo.event.extendedProps.employeeName ? `Employee: ${eventInfo.event.extendedProps.employeeName}<br />` : ''}
             ${eventInfo.event.extendedProps.tokenNo ? `Token No: ${eventInfo.event.extendedProps.tokenNo}` : ''}
         `;
+
     
         return (
             <>
-                <div data-tooltip-id="eventTooltip" data-tooltip-html={hoverText.trim()}>
+                <div 
+                    data-tooltip-id="eventTooltip" 
+                    data-tooltip-html={hoverText.trim()}
+                    style={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        display: 'block',
+                    }}
+                >
                     <div className="row">
-                        <div className="col-md-10" style={{fontSize:'14px', fontStyle:'italic'}}>
-                            <b>{eventInfo.event.title}</b>
+                        <div 
+                            className="col-md-10" 
+                            style={{
+                                fontSize: isLongTitle ? '12px' : '14px', // Reduce font size if title is long
+                                fontStyle: 'italic',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                            }}
+                        >
+                            <b>{title}</b>
                         </div>
                     </div>
                 </div>
-                
+    
                 {/* Tooltip with custom styles */}
                 <Tooltip 
                     id="eventTooltip" 
@@ -850,6 +875,7 @@ function AppointmentScheduler() {
             </>
         );
     }
+    
 
     const handleTimeChange = (date, name) => {
         console.log('treatmentTypes', treatmentTypes);
