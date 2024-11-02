@@ -102,6 +102,16 @@ const Sidebar = () => {
           </li>
           </>
           ): null}
+          <li className={menuState.report ? 'active' : ''}>
+            <span onClick={() => toggleMenu('report')}>Reports</span>
+            {menuState.report && (
+              <ul>
+                <li>
+                  <Link to="/appointment-report">Appointment Report</Link>
+                </li>
+              </ul>
+            )}
+          </li>
           {designationCode === "SAD" || designationCode === "AD" || designationCode === "RP" ? (
             <li>
               <Link to="/appoinment-schedular">Appointment Scheduler</Link>
