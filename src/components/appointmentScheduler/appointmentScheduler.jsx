@@ -16,7 +16,7 @@ import moment from 'moment';
 import { EmployeeDayOffsModal } from '../employeeDayOffsModal/employeeDayOffsModal.jsx';
 import { EmployeeLeavesModal } from '../employeeLeavesModal/employeeLeavesModal.jsx';
 import { EmployeeShiftsModal } from '../employeeShiftsModal/employeeShiftsModal.jsx';
-import StarIcon from '@mui/icons-material/Star';
+import { Tooltip } from 'react-tooltip';
 import { Autocomplete, TextField } from '@mui/material';
 import { ConfirmationModalForValidation } from '../confirmationModalForValidation/confirmationModalForValidation.jsx';
 
@@ -237,16 +237,20 @@ function AppointmentScheduler() {
 
     const getBackgroundColor = (employeeId, tokenNo, actualStart, actualend) => {
         if ((employeeId == null || employeeId == "") && (tokenNo == null || tokenNo == "")) {
-            return '#707070';
+            //return '#707070';
+            return '#4d4a4a';
         } else if((employeeId == null || employeeId == "")  && (tokenNo != null && tokenNo != "")) {
             return '#ee0d0d';
         } else if((employeeId != null && employeeId != "") && (tokenNo == null || tokenNo == "")) {
-            return '#ffc107';
+            return '#ff8007';
+            //return '#ffc107';
         } else if((employeeId != null && employeeId != "") && (tokenNo != null && tokenNo != "") 
         && (actualStart != null && actualStart != "") && (actualend != null && actualend != "")) {
-            return '#57aa57';
+            //return '#57aa57';
+            return '#276b26';
         } else {
-            return '#2c95e8'
+            return '#094b7e';
+            //return '#2c95e8'
         }
     };
     
@@ -508,7 +512,7 @@ function AppointmentScheduler() {
         setAppointmentData({
             id: undefined,
             scheduleDate: new Date(),
-            treatmentTypeId: '',
+            treatmentTypeId: [],
             employeeId: '',
             secondaryEmployeeId: '',
             customerName: '',
@@ -516,9 +520,34 @@ function AppointmentScheduler() {
             tokenNo: '',
             tokenIssueTime: new Date(),
             resourceId: '',
-            remarks: ''
+            remarks: '',
+            locationId: '',
+            appoinmentTreatments: []
         });
-        setFormErrors({});
+        setSelectedEventId(null);
+        setSelectedEmployee(null);
+        setNotification({ message: '', type: '' });
+        setFormErrors({
+            customerName: false,
+            contactNo: false,
+            treatmentTypeId: false,
+            scheduleDate: false
+        });
+        setCurrentEvents([]);
+        setDropEvent([]);
+        setModalIsOpen(false);
+        setSelectedResource({});
+        setIsConfirmModalOpen(false);
+        setIsConfirmModalOpenForValidation(false);
+        setShowModal(false);
+        setModalContent({ type: '', message: '' });
+        setStartTime(new Date());
+        setEndTime(new Date());
+        setActualStartTime(null);
+        setActualEndTime(null);
+        setIsConfirmed(false);
+        setIsClickedHandleSubmit(false);
+        setIsEventDrop(false);
     };
     
     const handleEventDrop = async (info) => {
@@ -716,6 +745,10 @@ function AppointmentScheduler() {
             setModalContent({ type: 'success', message: 'Appointment updated successfully!' });
             setShowModal(true);
             console.log('Appointment created:', createdAppointment);
+            refreshAppointments();  // Fetch appointments again or adjust state directly
+            setModalIsOpen(false);
+            resetAppointmentForm(); // Clear or reset the form state
+            setSelectedResource({});
         } catch (error) {
             console.error('Failed to update appointment:', error);
             setModalContent({ type: 'error', message: 'Failed to update appointment' });
@@ -734,8 +767,11 @@ function AppointmentScheduler() {
             const updatedEvents = currentEvents.filter(event => event.id !== selectedEventId);
             setCurrentEvents(updatedEvents);
             setSelectedEventId(null);
-            window.location.reload();
-            console.log('Appointment deleted successfully');
+            
+            refreshAppointments();  // Fetch appointments again or adjust state directly
+            setModalIsOpen(false);
+            resetAppointmentForm(); // Clear or reset the form state
+            setSelectedResource({});
         } catch (error) {
             console.error('Failed to delete appointment:', error);
             alert('Could not delete the appointment. Please try again.');
@@ -767,10 +803,6 @@ function AppointmentScheduler() {
         console.log("Opening confirmation modal");
         setIsConfirmModalOpen(true);  // This should trigger the modal to open
     };
-
-    const closeModalByIcon = () => {
-        setModalIsOpen(false);
-    };
     
     // Add useEffect to monitor the state of isConfirmModalOpen
     useEffect(() => {
@@ -783,36 +815,38 @@ function AppointmentScheduler() {
     }, [isConfirmModalOpenForValidation]);
 
     function renderEventContent(eventInfo) {
+        // Prepare hover text with <br /> for line breaks
+        const hoverText = `
+            ${eventInfo.event.extendedProps.treatmentTypes ? `Treatment Types: ${eventInfo.event.extendedProps.treatmentTypes}<br />` : ''}
+            ${eventInfo.event.extendedProps.employeeName ? `Employee: ${eventInfo.event.extendedProps.employeeName}<br />` : ''}
+            ${eventInfo.event.extendedProps.tokenNo ? `Token No: ${eventInfo.event.extendedProps.tokenNo}` : ''}
+        `;
+    
         return (
             <>
-                <div className='row'>
-                    <div className='col-md-10'>
-                        <b>{eventInfo.event.title}</b>
-                    </div>
-                    <div className='col-md-2'>
-                        {eventInfo.event.extendedProps.tokenNo && (
-                            <div style={{ textAlign: 'right' }}>
-                                <StarIcon style={{ color: '#ffd700' }} />
-                            </div>
-                        )}
+                <div data-tooltip-id="eventTooltip" data-tooltip-html={hoverText.trim()}>
+                    <div className="row">
+                        <div className="col-md-10" style={{fontSize:'14px', fontStyle:'italic'}}>
+                            <b>{eventInfo.event.title}</b>
+                        </div>
                     </div>
                 </div>
-                <div className='row'>
-                    <div className='col-md-12'>
-                        {eventInfo.event.extendedProps.treatmentTypes && (
-                            <div><i>{eventInfo.event.extendedProps.treatmentTypes}</i></div>
-                        )}
-                    </div>
-                </div>
-                <div className='row'>
-                    <div className='col-md-12'>
-                        {eventInfo.event.extendedProps.employeeName && (
-                            <div><b>{eventInfo.event.extendedProps.employeeName}</b></div>
-                        )}
-
-                    </div>
-                </div>
-
+                
+                {/* Tooltip with custom styles */}
+                <Tooltip 
+                    id="eventTooltip" 
+                    multiline={true} 
+                    style={{ 
+                        backgroundColor: '#333', 
+                        color: '#fff', 
+                        padding: '10px', 
+                        borderRadius: '8px', 
+                        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)', 
+                        fontSize: '0.9em', 
+                        textAlign: 'left',
+                        maxWidth: '200px'
+                    }}
+                />
             </>
         );
     }
@@ -984,6 +1018,13 @@ function AppointmentScheduler() {
         }
     };
 
+    const closeModalAndReset = () => {
+        console.log('closedddddddddddddddd')
+        refreshAppointments();  // Refresh appointments or reset state as needed
+        resetAppointmentForm(); // Reset form and all necessary states
+        setSelectedResource({}); // Reset selected resource
+        setModalIsOpen(false);   // Close the modal
+    };
     
     useEffect(() => {
         console.log("appointment dataaaaaaaa:", appointmentData);
@@ -1046,7 +1087,7 @@ function AppointmentScheduler() {
 
 <Modal
     isOpen={modalIsOpen}
-    onRequestClose={() => setModalIsOpen(false)}
+    onRequestClose={closeModalAndReset}
     className="Modal custom-modal"
     closeTimeoutMS={300}
     overlayClassName="Overlay"
@@ -1061,7 +1102,7 @@ function AppointmentScheduler() {
                             <h5 className="modal-title-appointment custom-modal-title-appointment">Create Appointment at <span style={{color:'green', fontWeight:'bold'}}>{selectedResource.name || ''}</span></h5>
                         </div>
                         <div className="col-2 text-right">
-                            <button type="button" className="close custom-close" onClick={closeModalByIcon}>
+                            <button type="button" className="close custom-close" onClick={closeModalAndReset}>
                                 <span>&times;</span>
                             </button>
                         </div>
