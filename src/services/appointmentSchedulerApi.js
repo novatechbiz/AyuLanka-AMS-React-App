@@ -140,6 +140,16 @@ export const fetchDayOffsData  = async (date) => {
   }
 };
 
+export const fetchAppoitmentByDate  = async (date) => {
+  try {
+      const response = await api.get(`/AppointmentSchedule/ByDate/${date}`);
+      return response.data;  // Assuming the API returns an array of appointments
+  } catch (error) {
+      console.error("Error fetching day offs:", error);
+      throw error;
+  }
+};
+
 export const fetchLeaveData   = async (date) => {
   try {
       const response = await api.get(`/staffleave/getleavesbydate/${date}`);
