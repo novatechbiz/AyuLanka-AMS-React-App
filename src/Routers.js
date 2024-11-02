@@ -16,6 +16,7 @@ import ChangeShift from "./components/changeShift/changeShift";
 import ApproveShift from "./components/approveShift/approveShift";
 import ManageAttendance from "./components/attendance/manageAttendance";
 import Logout from "./components/logout/logout";
+import AppointmentReport from "./components/appointmentReport/appointmentReport";
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -48,6 +49,7 @@ const Routers = () => {
           <Route path="/approve-dayoff" element={<ApproveDayOff />} />
           <Route path="/change-shift" element={<ChangeShift />} />
           <Route path="/approve-shift" element={<ApproveShift />} />
+          <Route path="/appointment-report" element={<AppointmentReport />} />
           <Route path="/logout" element={<Logout />} />
         </Routes>
       </Layout>
