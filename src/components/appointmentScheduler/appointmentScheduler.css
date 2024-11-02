@@ -117,6 +117,12 @@ button.cancel-button {
     border-radius: 3px; /* Rounded corners for events */
 }
 
+.fc .fc-event {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2); /* Adds a subtle shadow */
+}
+
 /* Agenda views specifics */
 .fc-agenda-view .fc-day-grid {
     background-color: #fdfdfe; /* Very light background for day grid */

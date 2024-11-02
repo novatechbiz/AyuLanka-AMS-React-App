@@ -237,20 +237,21 @@ function AppointmentScheduler() {
 
     const getBackgroundColor = (employeeId, tokenNo, actualStart, actualend) => {
         if ((employeeId == null || employeeId == "") && (tokenNo == null || tokenNo == "")) {
-            //return '#707070';
-            return '#4d4a4a';
-        } else if((employeeId == null || employeeId == "")  && (tokenNo != null && tokenNo != "")) {
-            return '#ee0d0d';
-        } else if((employeeId != null && employeeId != "") && (tokenNo == null || tokenNo == "")) {
-            return '#ff8007';
-            //return '#ffc107';
-        } else if((employeeId != null && employeeId != "") && (tokenNo != null && tokenNo != "") 
-        && (actualStart != null && actualStart != "") && (actualend != null && actualend != "")) {
-            //return '#57aa57';
-            return '#276b26';
+            // Luminous dark gray
+            return '#6E6E6E';
+        } else if ((employeeId == null || employeeId == "") && (tokenNo != null && tokenNo != "")) {
+            // Luminous red
+            return '#FF3333';
+        } else if ((employeeId != null && employeeId != "") && (tokenNo == null || tokenNo == "")) {
+            // Luminous orange
+            return '#FF9900';
+        } else if ((employeeId != null && employeeId != "") && (tokenNo != null && tokenNo != "") 
+            && (actualStart != null && actualStart != "") && (actualend != null && actualend != "")) {
+            // Luminous green
+            return '#33CC33';
         } else {
-            return '#094b7e';
-            //return '#2c95e8'
+            // Luminous blue
+            return '#1E90FF';
         }
     };
     
