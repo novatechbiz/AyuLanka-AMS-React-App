@@ -37,6 +37,30 @@ const AppointmentReport = () => {
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     };
 
+    function calculateDuration(actualFromTime, actualToTime) {
+        // console.log('actualFromTime ', actualFromTime, ' actualToTime ', actualToTime)
+         // Parse the time strings into Date objects
+         const fromTimeParts = actualFromTime.split(':');
+         const toTimeParts = actualToTime.split(':');
+     
+         // Create Date objects for today with the provided times
+         const fromDate = new Date();
+         const toDate = new Date();
+     
+         fromDate.setHours(fromTimeParts[0], fromTimeParts[1], fromTimeParts[2]);
+         toDate.setHours(toTimeParts[0], toTimeParts[1], toTimeParts[2]);
+     
+         // Calculate the duration in milliseconds
+         const durationMilliseconds = toDate - fromDate;
+     
+         // Convert milliseconds to minutes
+         const durationMinutes = Math.floor(durationMilliseconds / 60000);
+         const durationHours = Math.floor(durationMinutes / 60);
+         const remainingMinutes = durationMinutes % 60;
+     
+         return durationHours + "h:" + remainingMinutes + "m";
+     }
+
     const filteredAppointments = appointments.filter((appointment) => {
         return (
             (appointment.tokenNo !== null && appointment.tokenNo.toString().includes(searchTerm)) || // Check Token Number
@@ -50,6 +74,7 @@ const AppointmentReport = () => {
             (appointment.fromTime && appointment.fromTime.includes(searchTerm)) || // Check Start Time
             (appointment.toTime && appointment.toTime.includes(searchTerm)) || // Check End Time
             (appointment.actualFromTime && `${appointment.actualFromTime} - ${appointment.actualToTime}`.includes(searchTerm)) || // Check Actual Start & End Time
+            (appointment.actualFromTime && appointment.actualToTime ? calculateDuration(appointment.actualFromTime, appointment.actualToTime) : '0h:0m'.includes(searchTerm)) ||
             (appointment.remarks && appointment.remarks.toLowerCase().includes(searchTerm.toLowerCase())) || // Check Remarks
             (appointment.tokenIssueTime && formatDateTime(appointment.tokenIssueTime).includes(searchTerm)) || // Check Token Issued Date & Time
             (appointment.enteredByEmployee?.callingName && appointment.enteredByEmployee.callingName.toLowerCase().includes(searchTerm.toLowerCase())) || // Check Entered By
@@ -106,6 +131,7 @@ const AppointmentReport = () => {
                                     <th>Scheduled Date</th>
                                     <th>Scheduled Start Time & End Time</th>
                                     <th>Actual Start Time & End Time</th>
+                                    <th>Duration</th>
                                     <th>Remarks</th>
                                     <th>Token Issued Date & Time</th>
                                     <th>Entered By</th>
@@ -127,6 +153,7 @@ const AppointmentReport = () => {
                                         <td>${appointment.scheduleDate.split('T')[0]}</td>
                                         <td>${appointment.fromTime} - ${appointment.toTime}</td>
                                         <td>${appointment.actualFromTime ? `${appointment.actualFromTime} - ${appointment.actualToTime}` : ''}</td>
+                                        <td>${appointment.actualFromTime && appointment.actualToTime ? calculateDuration(appointment.actualFromTime, appointment.actualToTime) : '0h:0m'}</td>
                                         <td>${appointment.remarks}</td>
                                         <td>${appointment.tokenIssueTime ? formatDateTime(appointment.tokenIssueTime) : ''}</td>
                                         <td>${appointment.enteredByEmployee.callingName}</td>
@@ -155,6 +182,7 @@ const AppointmentReport = () => {
             ScheduledDate: appointment.scheduleDate.split('T')[0],
             ScheduledTime: `${appointment.fromTime} - ${appointment.toTime}`,
             ActualTime: appointment.actualFromTime ? `${appointment.actualFromTime} - ${appointment.actualToTime}` : null,
+            Duration: appointment.actualFromTime && appointment.actualToTime ? calculateDuration(appointment.actualFromTime, appointment.actualToTime) : '0h:0m',
             Remarks: appointment.remarks,
             TokenIssuedDateTime: appointment.tokenIssueTime ? formatDateTime(appointment.tokenIssueTime) : null,
             EnteredBy: appointment.enteredByEmployee.callingName,
@@ -223,6 +251,7 @@ const AppointmentReport = () => {
                             <th>Scheduled Date</th>
                             <th>Scheduled Start Time & End Time</th>
                             <th>Actual Start Time & End Time</th>
+                            <th>Duration</th>
                             <th>Remarks</th>
                             <th>Token Issued Date & Time</th>
                             <th>Entered By</th>
@@ -244,6 +273,7 @@ const AppointmentReport = () => {
                                 <td>{appointment.scheduleDate.split('T')[0]}</td>
                                 <td>{appointment.fromTime} - {appointment.toTime}</td>
                                 <td>{appointment.actualFromTime ? `${appointment.actualFromTime} - ${appointment.actualToTime}` : ''}</td>
+                                <td>{appointment.actualFromTime && appointment.actualToTime ? calculateDuration(appointment.actualFromTime, appointment.actualToTime) : '0h:0m'}</td>
                                 <td>{appointment.remarks}</td>
                                 <td>{appointment.tokenIssueTime ? formatDateTime(appointment.tokenIssueTime) : ''}</td>
                                 <td>{appointment.enteredByEmployee.callingName}</td>

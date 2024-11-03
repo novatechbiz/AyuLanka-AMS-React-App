@@ -45,110 +45,122 @@ const StaffWiseAppointmentSummaryReport = () => {
         return durationMinutes;
     }
 
-    const fetchAppointments = async () => {
-        try {
-            const start = new Date(startDate); // Convert to Date object
-            const end = new Date(endDate);     // Convert to Date object
-            const data = await fetchAppointmentsByDateRange(start, end);
-    
-            const employeeData = {};
-            
-            // Iterate over each appointment in the response
-            data.forEach(appointment => {
-                const scheduleDate = new Date(appointment.scheduleDate).toDateString(); // Format the date
-                const employee = appointment.employee;
-    
-                // Use "Unknown" if no employee is assigned
-                const employeeId = employee ? employee.id : "Unknown";
-                const callingName = employee ? employee.callingName : "No Employee";
-    
-                // Initialize employee data if not already present
-                if (!employeeData[employeeId]) {
-                    employeeData[employeeId] = {
-                        employeeId: employeeId,
-                        callingName: callingName,
-                        scheduleCounts: [], // Change to an array for date-specific counts
-                    };
-                }
-    
-                // Find or create a schedule entry for the specific date
-                const scheduleEntry = employeeData[employeeId].scheduleCounts.find(entry => entry.date === scheduleDate);
-    
-                if (!scheduleEntry) {
-                    // Initialize a new entry for the date if not present
-                    employeeData[employeeId].scheduleCounts.push({
-                        date: scheduleDate,
-                        appointmentCount: 0,
-                        treatmentCount: 0,
-                        totalDuration: 0,
-                    });
-                }
-    
-                // Get the correct schedule entry
-                const currentScheduleEntry = employeeData[employeeId].scheduleCounts.find(entry => entry.date === scheduleDate);
-    
-                // Update counts for the specific date
-                currentScheduleEntry.appointmentCount++;
-                currentScheduleEntry.treatmentCount += appointment.appointmentTreatments.length;
-    
-                if (appointment.actualFromTime != null && appointment.actualToTime != null) {
-                    const totalDuration = calculateDuration(appointment.actualFromTime, appointment.actualToTime);
-                    currentScheduleEntry.totalDuration += totalDuration; // Assuming you want to add total minutes
-                }
-            });
-    
-            // Prepare the final array
-            const result = Object.values(employeeData);
-    
-            // Map appointments to include counts for each date in dateRange
-            const mappedAppointments = result.map(employee => {
-                const summary = {
+// Helper function to convert minutes into hours and minutes (e.g., "1h:30m")
+const formatDuration = (minutes) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h:${mins}m`;
+};
+
+const fetchAppointments = async () => {
+    try {
+        const start = new Date(startDate); // Convert to Date object
+        const end = new Date(endDate);     // Convert to Date object
+        const data = await fetchAppointmentsByDateRange(start, end);
+
+        const employeeData = {};
+        
+        // Iterate over each appointment in the response
+        data.forEach(appointment => {
+            const scheduleDate = new Date(appointment.scheduleDate).toDateString(); // Format the date
+            const employee = appointment.employee;
+
+            // Use "Unknown" if no employee is assigned
+            const employeeId = employee ? employee.id : "Unknown";
+            const callingName = employee ? employee.callingName : "No Employee";
+
+            // Initialize employee data if not already present
+            if (!employeeData[employeeId]) {
+                employeeData[employeeId] = {
+                    employeeId: employeeId,
+                    callingName: callingName,
+                    scheduleCounts: [], // Change to an array for date-specific counts
+                };
+            }
+
+            // Find or create a schedule entry for the specific date
+            const scheduleEntry = employeeData[employeeId].scheduleCounts.find(entry => entry.date === scheduleDate);
+
+            if (!scheduleEntry) {
+                // Initialize a new entry for the date if not present
+                employeeData[employeeId].scheduleCounts.push({
+                    date: scheduleDate,
                     appointmentCount: 0,
                     treatmentCount: 0,
-                    duration: 0,
+                    totalDuration: 0,
+                });
+            }
+
+            // Get the correct schedule entry
+            const currentScheduleEntry = employeeData[employeeId].scheduleCounts.find(entry => entry.date === scheduleDate);
+
+            // Update counts for the specific date
+            currentScheduleEntry.appointmentCount++;
+            currentScheduleEntry.treatmentCount += appointment.appointmentTreatments.length;
+
+            if (appointment.actualFromTime != null && appointment.actualToTime != null) {
+                const totalDuration = calculateDuration(appointment.actualFromTime, appointment.actualToTime);
+                currentScheduleEntry.totalDuration += totalDuration; // Assuming you want to add total minutes
+            }
+        });
+
+        // Prepare the final array
+        const result = Object.values(employeeData);
+
+        // Map appointments to include counts for each date in dateRange
+        const mappedAppointments = result.map(employee => {
+            const summary = {
+                appointmentCount: 0,
+                treatmentCount: 0,
+                duration: 0,
+            };
+            const dateRangeNew = generateDateRange(startDate, endDate);
+            
+            // Create a new object for the employee with counts for each date
+            const dateCounts = dateRangeNew.reduce((acc, date) => {
+                const formattedDate = new Date(date).toDateString();
+                const scheduleEntry = employee.scheduleCounts.find(entry => {
+                    return new Date(entry.date).toDateString() === formattedDate; // Ensure both are Date objects
+                }) || {
+                    appointmentCount: 0,
+                    treatmentCount: 0,
+                    totalDuration: 0,
                 };
-                const dateRangeNew = generateDateRange(startDate, endDate)
-                console.log(dateRangeNew)
-                console.log(employee.scheduleCounts)
-                // Create a new object for the employee with counts for each date
-                const dateCounts = dateRangeNew.reduce((acc, date) => {
-                    const formattedDate = new Date(date).toDateString();
-                    const scheduleEntry = employee.scheduleCounts.find(entry => {
-                        return new Date(entry.date).toDateString() === formattedDate; // Ensure both are Date objects
-                    }) || {
-                        appointmentCount: 0,
-                        treatmentCount: 0,
-                        totalDuration: 0,
-                    };
-                    
-                    // Update summary totals
-                    summary.appointmentCount += scheduleEntry.appointmentCount;
-                    summary.treatmentCount += scheduleEntry.treatmentCount;
-                    summary.duration += scheduleEntry.totalDuration;
-    
-                    acc[date] = {
-                        appointmentCount: scheduleEntry.appointmentCount,
-                        treatmentCount: scheduleEntry.treatmentCount,
-                        duration: scheduleEntry.totalDuration,
-                    };
-    
-                    return acc;
-                }, {});
-    
-                return {
-                    employeeId: employee.employeeId,
-                    callingName: employee.callingName,
-                    ...dateCounts, // Spread dateCounts into the employee object
-                    summary: summary, // Include the summary object
+                
+                // Update summary totals
+                summary.appointmentCount += scheduleEntry.appointmentCount;
+                summary.treatmentCount += scheduleEntry.treatmentCount;
+                summary.duration += scheduleEntry.totalDuration;
+
+                // Convert totalDuration to "hours:minutes" format
+                acc[date] = {
+                    appointmentCount: scheduleEntry.appointmentCount,
+                    treatmentCount: scheduleEntry.treatmentCount,
+                    duration: formatDuration(scheduleEntry.totalDuration), // Format duration here
                 };
-            });
-    
-            setAppointments(mappedAppointments); // Set the grouped data
-            setDateRange(generateDateRange(startDate, endDate)); // Set the date range for table headers
-        } catch (error) {
-            console.error('Error fetching appointments data:', error);
-        }
-    };
+
+                return acc;
+            }, {});
+
+            return {
+                employeeId: employee.employeeId,
+                callingName: employee.callingName,
+                ...dateCounts, // Spread dateCounts into the employee object
+                summary: {
+                    appointmentCount: summary.appointmentCount,
+                    treatmentCount: summary.treatmentCount,
+                    duration: formatDuration(summary.duration), // Format summary duration here
+                },
+            };
+        });
+
+        setAppointments(mappedAppointments); // Set the grouped data
+        setDateRange(generateDateRange(startDate, endDate)); // Set the date range for table headers
+    } catch (error) {
+        console.error('Error fetching appointments data:', error);
+    }
+};
+
 
     const filteredAppointments = appointments.filter((appointment) => {
         return appointment.callingName.toLowerCase().includes(searchTerm.toLowerCase());
