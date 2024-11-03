@@ -102,6 +102,7 @@ const Sidebar = () => {
           </li>
           </>
           ): null}
+          {designationCode === "SAD" || designationCode === "AD" || designationCode === "ADT" || designationCode === "RP" ? (
           <li className={menuState.report ? 'active' : ''}>
             <span onClick={() => toggleMenu('report')}>Reports</span>
             {menuState.report && (
@@ -109,10 +110,14 @@ const Sidebar = () => {
                 <li>
                   <Link to="/appointment-report">Appointment Report</Link>
                 </li>
+                <li>
+                  <Link to="/staff-appointment-summary-report">Staff Wise Appointment Summary Report</Link>
+                </li>
               </ul>
             )}
           </li>
-          {designationCode === "SAD" || designationCode === "AD" || designationCode === "RP" ? (
+          ): null}
+          {designationCode === "SAD" || designationCode === "AD" || designationCode === "RP" || designationCode === "ADT" ? (
             <li>
               <Link to="/appoinment-schedular">Appointment Scheduler</Link>
             </li>

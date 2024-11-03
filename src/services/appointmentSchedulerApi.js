@@ -150,6 +150,21 @@ export const fetchAppoitmentByDate  = async (date) => {
   }
 };
 
+export const fetchAppointmentsByDateRange = async (startDate, endDate) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/appointmentschedule/bydaterange`, {
+      params: {
+        startDate: startDate.toISOString().substring(0, 10), // Format as YYYY-MM-DD
+        endDate: endDate.toISOString().substring(0, 10)      // Format as YYYY-MM-DD
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching appointmentschedule:", error);
+    throw error;
+  }
+};
+
 export const fetchLeaveData   = async (date) => {
   try {
       const response = await api.get(`/staffleave/getleavesbydate/${date}`);
