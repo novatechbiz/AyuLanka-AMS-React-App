@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import * as XLSX from 'xlsx'; // Import XLSX library
 import './appointmentReport.css';
-import { fetchAppoitmentByDate } from '../../services/appointmentSchedulerApi';
+import { fetchAppoitmentByDate } from '../../../services/appointmentSchedulerApi';
 
 const AppointmentReport = () => {
     const [appointments, setAppointments] = useState([]);
@@ -12,7 +11,15 @@ const AppointmentReport = () => {
     const fetchAppointments = async (date) => {
         try {
             const data = await fetchAppoitmentByDate(date);
-            setAppointments(data);
+
+            const sortedData = data.sort((a, b) => {
+                const tokenA = a.tokenNo !== null ? parseInt(a.tokenNo, 10) : Infinity;
+                const tokenB = b.tokenNo !== null ? parseInt(b.tokenNo, 10) : Infinity;
+                return tokenA - tokenB;
+            });
+              
+              console.log(sortedData);
+            setAppointments(sortedData);
         } catch (error) {
             console.error('Error fetching day offs data:', error);
         }
@@ -162,7 +169,7 @@ const AppointmentReport = () => {
     };
 
     return (
-        <div>
+        <div style={{marginRight:'4%'}}>
             <h2 className="report-heading">Appointment Report</h2>
 
             {/* Date Filter */}
