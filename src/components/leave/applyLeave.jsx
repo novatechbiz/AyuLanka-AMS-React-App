@@ -259,7 +259,7 @@ class ApplyLeave extends React.Component {
                     value={currentLeave.halfDay}
                     onChange={this.handleInputChange}
                   >
-                    <option value="">Select Time</option>
+                    <option value="0">Select Time</option>
                     <option value="1">Morning</option>
                     <option value="2">Evening</option>
                   </select>
