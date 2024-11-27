@@ -8,7 +8,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './appointmentScheduler.css'; // Ensure this file contains your custom styles
-import { deleteAppointment, fetchEmployees, fetchEmployeeSchedule, fetchTreatmentLocations, addAppointment, fetchAppointments, fetchTreatmentTypesByLocation, fetchAppointmentDetails, fetchLeaveData, fetchDayOffsData, fetchShiftsData } from '../../services/appointmentSchedulerApi.js';
+import { fetchAppointmentsByDateRange, deleteAppointment, fetchEmployees, fetchEmployeeSchedule, fetchTreatmentLocations, addAppointment, fetchAppointments, fetchTreatmentTypesByLocation, fetchAppointmentDetails, fetchLeaveData, fetchDayOffsData, fetchShiftsData } from '../../services/appointmentSchedulerApi.js';
 import { ConfirmationModal } from '../confirmationModal/confirmationModal.jsx';
 import { NotificationComponent } from '../notificationComponent/notificationComponent.jsx';
 import AppointmentModalComponent from '../appointmentModalComponent/appointmentModalComponent.jsx';
@@ -75,13 +75,13 @@ function AppointmentScheduler() {
 
     // Fetch Employees and Treatment Types from API
     useEffect(() => {
+        console.log('appointmentData scheduleDate', appointmentData)
         const loadData = async () => {
             try {
-                const [empData, treatmentLocationData, appointments] = await Promise.all([
+                const [empData, treatmentLocationData] = await Promise.all([
                     fetchEmployees(),
                     // fetchTreatmentTypes(),
                     fetchTreatmentLocations(),
-                    fetchAppointments()  // Fetch appointments
                 ]);
 
                 // Filter employees with designationCode 'MA'
@@ -89,7 +89,6 @@ function AppointmentScheduler() {
 
                 setEmployees(filteredEmployees);
                 setResources(treatmentLocationData);
-                setCurrentEvents(formatAppointments(appointments)); 
             } catch (error) {
                 console.error('Error loading data from API:', error);
             }
@@ -97,6 +96,16 @@ function AppointmentScheduler() {
 
         loadData();
     }, []);
+
+    const handleDatesSet = async (dateInfo) => {
+        const { startStr, endStr } = dateInfo;
+        try {
+            const appointments = await fetchAppointmentsByDateRange(startStr, endStr);
+            setCurrentEvents(formatAppointments(appointments)); // Format as needed for FullCalendar
+        } catch (error) {
+            console.error('Error fetching events for date range:', error);
+        }
+    };
 
     // Function to fetch and set Day Offs data
     const openDayOffsModal = async () => {
@@ -1104,6 +1113,7 @@ function AppointmentScheduler() {
                     }
                 }}
                 events={currentEvents}
+                datesSet={handleDatesSet}
                 eventContent={renderEventContent}
                 allDaySlot={false}
                 slotMinTime="07:00:00" // Start displaying times from 7 AM
