@@ -1,40 +1,60 @@
 .date-picker-container {
-    display: flex; /* Align items in a row */
-    align-items: center; /* Center-align items vertically */
-    justify-content: start; /* Align items to the start of the container */
-    padding: 10px; /* Padding around the container */
-    gap: 10px; /* Space between the date picker and the button */
+    display: flex;
+    /* Align items in a row */
+    align-items: center;
+    /* Center-align items vertically */
+    justify-content: start;
+    /* Align items to the start of the container */
+    padding: 10px;
+    /* Padding around the container */
+    gap: 10px;
+    /* Space between the date picker and the button */
     margin-bottom: 30px;
 }
 
 .date-picker-container .react-datepicker-wrapper {
-    flex-grow: 0; /* Prevents the date picker from growing too large */
+    flex-grow: 0;
+    /* Prevents the date picker from growing too large */
 }
 
 .date-picker-container .react-datepicker__input-container input {
-    padding: 8px 10px; /* Padding inside the date picker input */
-    font-size: 16px; /* Font size for readability */
-    border: 1px solid #ccc; /* Subtle border for the input */
-    border-radius: 5px; /* Rounded corners for the input */
-    width: 250px; /* Control the width of the input */
+    padding: 8px 10px;
+    /* Padding inside the date picker input */
+    font-size: 16px;
+    /* Font size for readability */
+    border: 1px solid #ccc;
+    /* Subtle border for the input */
+    border-radius: 5px;
+    /* Rounded corners for the input */
+    width: 250px;
+    /* Control the width of the input */
 }
 
 .date-picker-container button {
-    padding: 8px 15px; /* Padding inside the button */
-    background-color: #28a745; /* Green background for the button */
-    border: none; /* No border */
-    color: white; /* White text */
-    font-weight: bold; /* Bold text for visibility */
-    cursor: pointer; /* Indicates the button is clickable */
-    border-radius: 5px; /* Rounded corners */
-    flex-grow: 0; /* Prevents the button from stretching */
-    width: auto; /* Width automatically adjusts to the text */
+    padding: 8px 15px;
+    /* Padding inside the button */
+    background-color: #28a745;
+    /* Green background for the button */
+    border: none;
+    /* No border */
+    color: white;
+    /* White text */
+    font-weight: bold;
+    /* Bold text for visibility */
+    cursor: pointer;
+    /* Indicates the button is clickable */
+    border-radius: 5px;
+    /* Rounded corners */
+    flex-grow: 0;
+    /* Prevents the button from stretching */
+    width: auto;
+    /* Width automatically adjusts to the text */
 }
 
 .employee-roster {
     overflow-x: auto;
     margin: 20px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     background: white;
 }
@@ -46,7 +66,8 @@
     min-width: 1500px;
 }
 
-.employee-roster th, .employee-roster td {
+.employee-roster th,
+.employee-roster td {
     border: 1px solid #ddd;
     text-align: center;
     padding: 5px;
@@ -56,44 +77,56 @@
     font-size: 13px;
 }
 
-.employee-roster th:first-child, .employee-roster td:first-child {
+.employee-roster th:first-child,
+.employee-roster td:first-child {
     min-width: 200px;
 }
 
-.employee-roster th:nth-child(2), .employee-roster th:nth-child(3),
-.employee-roster td:nth-child(2), .employee-roster td:nth-child(3) {
+.employee-roster th:nth-child(2),
+.employee-roster th:nth-child(3),
+.employee-roster td:nth-child(2),
+.employee-roster td:nth-child(3) {
     min-width: 120px;
 }
 
 /* Saturday and Sunday color for both header and cell */
-.employee-roster th.saturday, .employee-roster td.saturday {
-    background-color: #dc2a8f; /* Pink color for Saturdays */
+.employee-roster th.saturday,
+.employee-roster td.saturday {
+    background-color: #dc2a8f;
+    /* Pink color for Saturdays */
 }
 
-.employee-roster th.sunday, .employee-roster td.sunday {
-    background-color: #6350f2; /* Blue color for Sundays */
+.employee-roster th.sunday,
+.employee-roster td.sunday {
+    background-color: #6350f2;
+    /* Blue color for Sundays */
 }
 
 /* Increase specificity to override day colors when checked */
 .employee-roster td.saturday.checked-day,
 .employee-roster td.sunday.checked-day {
-    background-color: yellow; /* Changes background to yellow when checked */
+    background-color: yellow;
+    /* Changes background to yellow when checked */
 }
 
 /* Default styles for all table headers */
 .employee-roster th {
-    background-color: #6b6262; /* Default header background */
+    background-color: #6b6262;
+    /* Default header background */
     color: white;
     position: sticky;
     top: 0;
     font-weight: normal;
-    padding: 5px; /* Adjust padding if necessary */
-    font-size: 13px; /* Consistent font size for headers */
+    padding: 5px;
+    /* Adjust padding if necessary */
+    font-size: 13px;
+    /* Consistent font size for headers */
 }
 
 /* Normal day and checked-day style */
 .employee-roster td.checked-day {
-    background-color: yellow; /* Apply for other days as well */
+    background-color: yellow;
+    /* Apply for other days as well */
 }
 
 /* Input and other styles remain unchanged */
@@ -113,16 +146,19 @@ input[type="checkbox"] {
 }
 
 .on-leave {
-    background-color: red !important; /* Leave days are marked red */
+    background-color: red !important;
+    /* Leave days are marked red */
 }
 
 .checked-day {
-    background-color: yellow !important; /* Checked days are marked yellow */
+    background-color: yellow !important;
+    /* Checked days are marked yellow */
 }
 
 /* Combined style for days that are both checked and on leave */
 .on-leave.checked-day {
-    background-color: yellow !important; /* Checked leave days turn yellow */
+    background-color: yellow !important;
+    /* Checked leave days turn yellow */
 }
 
 .roster-actions {
@@ -133,7 +169,8 @@ input[type="checkbox"] {
 .roster-actions button {
     font-size: 16px;
     cursor: pointer;
-    background-color: #4CAF50; /* Green */
+    background-color: #4CAF50;
+    /* Green */
     color: white;
     border: none;
     border-radius: 5px;
@@ -152,3 +189,33 @@ input[type="checkbox"] {
     color: white !important;
 }
 
+/* Make the table header sticky */
+table th {
+    position: sticky !important;
+    top: 0 !important;
+    background-color: #fff;
+    z-index: 2 !important;
+    /* Ensure the header is on top */
+}
+
+/* Optional: Add a shadow to the table header for better visibility */
+table th {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Make the first column (Employee Name) sticky */
+table td.sticky-column,
+table th.sticky-column {
+    position: sticky !important;
+    left: 0 !important;
+    background-color: #fff;
+    z-index: 1 !important;
+    /* Set z-index for proper layering */
+    box-shadow: 2px 0px 4px rgba(0, 0, 0, 0.1);
+    /* Optional: Add a shadow for better visibility */
+}
+
+/* Ensure that the header sticky column stays on top */
+table th.sticky-column {
+    z-index: 3 !important;
+}

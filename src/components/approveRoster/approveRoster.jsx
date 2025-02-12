@@ -22,11 +22,11 @@ function ApproveRoster() {
 
     useEffect(() => {
         fetchRosterDates()
-        .then(data => {
-            const unapprovedRosters = data.filter(roster => !roster.isApproved);
-            setRosters(unapprovedRosters);
-        })
-        .catch(setError);
+            .then(data => {
+                const unapprovedRosters = data.filter(roster => !roster.isApproved);
+                setRosters(unapprovedRosters);
+            })
+            .catch(setError);
 
         fetchEmployees().then(setEmployees).catch(setError);
         fetchShifts().then(setShifts).catch(setError);
@@ -112,7 +112,7 @@ function ApproveRoster() {
     };
 
     const handleCheckboxChange = (employeeId, dayString) => {
-        const updatedDetails = {...rosterDetailsByEmployee};
+        const updatedDetails = { ...rosterDetailsByEmployee };
         updatedDetails[employeeId].daysOff[dayString] = !updatedDetails[employeeId].daysOff[dayString];
         setRosterDetailsByEmployee(updatedDetails);
     };
@@ -158,12 +158,12 @@ function ApproveRoster() {
                 days.map(day => {
                     const dayString = day.date.toLocaleDateString('sv-SE');
                     const isDayOff = detail.daysOff[dayString];
-                        return {
-                            EmployeeId: detail.employeeId,
-                            ShiftMasterId: detail.shiftMasterId,
-                            IsDayOff: isDayOff,
-                            DayOffDate: dayString
-                        };
+                    return {
+                        EmployeeId: detail.employeeId,
+                        ShiftMasterId: detail.shiftMasterId,
+                        IsDayOff: isDayOff,
+                        DayOffDate: dayString
+                    };
                 }).filter(entry => entry !== null)
             );
 
@@ -189,7 +189,7 @@ function ApproveRoster() {
     return (
         <div>
             <div className="employee-roster">
-                <h1 className='roster-header'>Approve Roster</h1><br/>
+                <h1 className='roster-header'>Approve Roster</h1><br />
                 <div className='row'>
                     <div className='col-md-4'>
                         <select className='form-control' value={selectedRosterId} onChange={handleRosterSelect}>
@@ -199,56 +199,58 @@ function ApproveRoster() {
                                     {new Date(roster.startDate).toLocaleDateString()} - {new Date(roster.endDate).toLocaleDateString()}
                                 </option>
                             ))}
-                        </select><br/>
+                        </select><br />
                     </div>
                     <div className='col-md-4'>&nbsp;</div>
                 </div>
                 {days.length > 0 && Object.keys(rosterDetailsByEmployee).length > 0 && (
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Employee Name</th>
-                                <th>Shift</th>
-                                {days.map((day, index) => (
-                                    <th key={index} className={day.dayClass}>{day.date.toLocaleDateString('en-us', { weekday: 'short' })}<br/>{day.date.toISOString().split('T')[0]}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {Object.values(rosterDetailsByEmployee).map(detail => {
-                                const employee = employees.find(emp => emp.id === detail.employeeId);
-                                if (!employee) return null;
-                                return (
-                                    <tr key={detail.employeeId}>
-                                        <td>{employee.employeeNumber} - {employee.callingName}</td>
-                                        <td>
-                                            <select className='form-control' style={{width:'fit-content'}} defaultValue={detail.shiftMasterId}>
-                                                {shifts.map(shift => (
-                                                    <option key={shift.id} value={shift.id}>{shift.fromTime} - {shift.toTime}</option>
-                                                ))}
-                                            </select>
-                                        </td>
-                                        {days.map(day => {
-                                            const dayString = day.date.toLocaleDateString('sv-SE');
-                                            const isDayOff = detail.daysOff[dayString] || false;
-                                            const employeeLeaveData = leaveData[employee.id] || {};
-                                            const isOnLeave = employeeLeaveData[dayString];
-                                            const cellClass = `${day.dayClass} ${isDayOff ? 'checked-day' : ''} ${isOnLeave ? 'on-leave' : ''}`;
-                                            return (
-                                                <td key={dayString} className={cellClass}>
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={isDayOff}
-                                                        onChange={() => handleCheckboxChange(detail.employeeId, dayString)}
-                                                    />
-                                                </td>
-                                            );
-                                        })}
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+                    <div className="table-wrapper" style={{ overflowY: 'auto', overflowX: 'auto', maxHeight: '500px' }}>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Employee Name</th>
+                                    <th>Shift</th>
+                                    {days.map((day, index) => (
+                                        <th key={index} className={day.dayClass}>{day.date.toLocaleDateString('en-us', { weekday: 'short' })}<br />{day.date.toISOString().split('T')[0]}</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {Object.values(rosterDetailsByEmployee).map(detail => {
+                                    const employee = employees.find(emp => emp.id === detail.employeeId);
+                                    if (!employee) return null;
+                                    return (
+                                        <tr key={detail.employeeId}>
+                                            <td className='sticky-column'>{employee.employeeNumber} - {employee.callingName}</td>
+                                            <td>
+                                                <select className='form-control' style={{ width: 'fit-content' }} defaultValue={detail.shiftMasterId}>
+                                                    {shifts.map(shift => (
+                                                        <option key={shift.id} value={shift.id}>{shift.fromTime} - {shift.toTime}</option>
+                                                    ))}
+                                                </select>
+                                            </td>
+                                            {days.map(day => {
+                                                const dayString = day.date.toLocaleDateString('sv-SE');
+                                                const isDayOff = detail.daysOff[dayString] || false;
+                                                const employeeLeaveData = leaveData[employee.id] || {};
+                                                const isOnLeave = employeeLeaveData[dayString];
+                                                const cellClass = `${day.dayClass} ${isDayOff ? 'checked-day' : ''} ${isOnLeave ? 'on-leave' : ''}`;
+                                                return (
+                                                    <td key={dayString} className={cellClass}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isDayOff}
+                                                            onChange={() => handleCheckboxChange(detail.employeeId, dayString)}
+                                                        />
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
             {days.length > 0 && Object.keys(rosterDetailsByEmployee).length > 0 && (
@@ -258,7 +260,7 @@ function ApproveRoster() {
                         <button className='btn-cancel' onClick={handleCancel}>Cancel</button>
                     </div>
                     <div className='col-md-2'>
-                    <button onClick={handleSubmit} disabled={loading || saving}>{saving ? 'Processing...' : 'Approve Roster'}</button>
+                        <button onClick={handleSubmit} disabled={loading || saving}>{saving ? 'Processing...' : 'Approve Roster'}</button>
                     </div>
                 </div>
             )}
