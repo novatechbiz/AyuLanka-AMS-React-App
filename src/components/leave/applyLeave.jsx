@@ -49,15 +49,15 @@ class ApplyLeave extends React.Component {
   handleSuccessOpen = () => {
     this.setState({ successModalOpen: true });
   };
-  
+
   handleSuccessClose = () => {
     this.setState({ successModalOpen: false });
   };
-  
+
   handleErrorOpen = () => {
     this.setState({ errorModalOpen: true });
   };
-  
+
   handleErrorClose = () => {
     this.setState({ errorModalOpen: false });
   };
@@ -121,10 +121,18 @@ class ApplyLeave extends React.Component {
     event.preventDefault();
     this.setState({ submitAttempted: true });
 
+
+
     const { isEditing, currentLeave } = this.state;
-    if (this.validateForm(currentLeave)) { // Validate the form before submission
+
+    const leaveData = {
+      ...currentLeave,
+      halfDay: currentLeave.halfDay || 0,
+    };
+
+    if (this.validateForm(leaveData)) { // Validate the form before submission
       if (isEditing) {
-        updateLeaveApplication(currentLeave).then((updatedLeave) => {
+        updateLeaveApplication(leaveData).then((updatedLeave) => {
           this.setState(prevState => ({
             leaveApplications: prevState.leaveApplications.map(leave =>
               leave.id === updatedLeave.id ? updatedLeave : leave
@@ -146,7 +154,7 @@ class ApplyLeave extends React.Component {
           this.handleErrorOpen("Failed to update leave application.");
         });
       } else {
-        createLeaveApplication(currentLeave)
+        createLeaveApplication(leaveData)
           .then((newLeave) => {
             this.setState(prevState => ({
               leaveApplications: [...prevState.leaveApplications, newLeave],
@@ -179,9 +187,18 @@ class ApplyLeave extends React.Component {
   };
 
   formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toISOString().split('T')[0];
+    // Parse the date assuming it's in the UTC format, without altering it
+    const date = new Date(dateString + "Z"); // Adding "Z" treats it as UTC
+
+    // Extract the date part (year, month, day) directly
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // months are 0-based
+    const day = String(date.getUTCDate()).padStart(2, '0');
+
+    // Return the formatted date in YYYY-MM-DD format
+    return `${year}-${month}-${day}`;
   };
+
 
   render() {
     const { currentLeave, submitAttempted, confirmModalOpen } = this.state;
@@ -194,7 +211,7 @@ class ApplyLeave extends React.Component {
       return shouldShow;
     };
 
-    return  (
+    return (
       <div className="container">
         <div className="row">
           <div className="col-md-4">
@@ -213,7 +230,7 @@ class ApplyLeave extends React.Component {
                   <option value="">Select Employee</option>
                   {this.state.employees.map((employee) => (
                     <option key={employee.id} value={employee.id}>
-                    {employee.employeeNumber} - {employee.callingName}
+                      {employee.employeeNumber} - {employee.callingName}
                     </option>
                   ))}
                 </select>
@@ -252,9 +269,8 @@ class ApplyLeave extends React.Component {
                     Select Half Day <span className="required-star">*</span>
                   </label>
                   <select
-                    className={`form-control ${
-                      shouldShowError("halfDay") ? "error-border" : ""
-                    }`}
+                    className={`form-control ${shouldShowError("halfDay") ? "error-border" : ""
+                      }`}
                     name="halfDay"
                     value={currentLeave.halfDay}
                     onChange={this.handleInputChange}
@@ -311,7 +327,7 @@ class ApplyLeave extends React.Component {
                       <td>{this.formatDate(leave.toDate)}</td>
                       <td>{leave.noOfDays}</td>
                       <td>
-                        <button className="btn btn-success btn-sm" style={{backgroundColor:'#28a745'}} onClick={() => this.handleEditLeave(leave)}>Edit</button>
+                        <button className="btn btn-success btn-sm" style={{ backgroundColor: '#28a745' }} onClick={() => this.handleEditLeave(leave)}>Edit</button>
                         <button className="btn btn-danger btn-sm" onClick={() => this.handleDeleteLeave(leave.id)}>Delete</button>
                       </td>
                     </tr>
@@ -322,10 +338,10 @@ class ApplyLeave extends React.Component {
           </div>
         </div>
         {/* Success modal */}
-        <ModalComponent show={this.state.successModalOpen} onClose={this.handleSuccessClose}  type="success" />
+        <ModalComponent show={this.state.successModalOpen} onClose={this.handleSuccessClose} type="success" />
 
         {/* Error modal */}
-        <ModalComponent show={this.state.errorModalOpen} onClose={this.handleErrorClose}  type="error" />
+        <ModalComponent show={this.state.errorModalOpen} onClose={this.handleErrorClose} type="error" />
 
         <ConfirmationModal
           isOpen={confirmModalOpen}

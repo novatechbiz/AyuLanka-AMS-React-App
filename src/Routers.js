@@ -18,6 +18,7 @@ import ManageAttendance from "./components/attendance/manageAttendance";
 import Logout from "./components/logout/logout";
 import AppointmentReport from "./components/Reports/appointmentReport/appointmentReport";
 import StaffWiseAppointmentSummaryReport from "./components/Reports/staffWiseAppointmentSummaryReport/staffWiseAppointmentSummaryReport";
+import StaffWiseTreatmentSummaryReport from "./components/Reports/staffWiseTreatmentSummaryReport/staffWiseTreatmentSummaryReport";
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -35,26 +36,27 @@ const Layout = ({ children }) => {
 
 const Routers = () => {
   return (
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/user" element={<User />} />
-          <Route path="/apply-leave" element={<ApplyLeave />} />
-          <Route path="/attendance-upload" element={<ManageAttendance />} />
-          <Route path="/employee-roster" element={<EmployeeRoster />} />
-          <Route path="/appoinment-schedular" element={<AppointmentScheduler />} />
-          <Route path="/update-roster" element={<UpdateRoster />} />
-          <Route path="/approve-roster" element={<ApproveRoster />} />
-          <Route path="/view-roster" element={<ViewRoster />} />
-          <Route path="/change-dayoff" element={<ChangeDayOff />} />
-          <Route path="/approve-dayoff" element={<ApproveDayOff />} />
-          <Route path="/change-shift" element={<ChangeShift />} />
-          <Route path="/approve-shift" element={<ApproveShift />} />
-          <Route path="/appointment-report" element={<AppointmentReport />} />
-          <Route path="/staff-appointment-summary-report" element={<StaffWiseAppointmentSummaryReport />} />
-          <Route path="/logout" element={<Logout />} />
-        </Routes>
-      </Layout>
+    <Layout>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/user" element={<User />} />
+        <Route path="/apply-leave" element={<ApplyLeave />} />
+        <Route path="/attendance-upload" element={<ManageAttendance />} />
+        <Route path="/employee-roster" element={<EmployeeRoster />} />
+        <Route path="/appoinment-schedular" element={<AppointmentScheduler />} />
+        <Route path="/update-roster" element={<UpdateRoster />} />
+        <Route path="/approve-roster" element={<ApproveRoster />} />
+        <Route path="/view-roster" element={<ViewRoster />} />
+        <Route path="/change-dayoff" element={<ChangeDayOff />} />
+        <Route path="/approve-dayoff" element={<ApproveDayOff />} />
+        <Route path="/change-shift" element={<ChangeShift />} />
+        <Route path="/approve-shift" element={<ApproveShift />} />
+        <Route path="/appointment-report" element={<AppointmentReport />} />
+        <Route path="/staff-appointment-summary-report" element={<StaffWiseAppointmentSummaryReport />} />
+        <Route path="/staff-treatment-summary-report" element={<StaffWiseTreatmentSummaryReport />} />
+        <Route path="/logout" element={<Logout />} />
+      </Routes>
+    </Layout>
   );
 };
 
