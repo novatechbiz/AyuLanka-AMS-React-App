@@ -786,7 +786,8 @@ function AppointmentScheduler() {
 
     const handleDelete = async () => {
         try {
-            await deleteAppointment(selectedEventId);
+            const userId = sessionStorage.getItem('userId');
+            await deleteAppointment(selectedEventId, userId);
             const updatedEvents = currentEvents.filter(event => event.id !== selectedEventId);
             setCurrentEvents(updatedEvents);
             setSelectedEventId(null);

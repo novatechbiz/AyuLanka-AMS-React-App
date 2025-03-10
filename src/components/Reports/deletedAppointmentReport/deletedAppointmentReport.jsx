@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx'; // Import XLSX library
-import './appointmentReport.css';
-import { fetchAppoitmentByDate } from '../../../services/appointmentSchedulerApi';
+import './deletedAppointmentReport.css';
+import { fetchDeletedAppoitmentByDate } from '../../../services/appointmentSchedulerApi';
 
-const AppointmentReport = () => {
+const DeletedAppointmentReport = () => {
     const [appointments, setAppointments] = useState([]);
     const [dateFilter, setDateFilter] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
 
     const fetchAppointments = async (date) => {
         try {
-            const data = await fetchAppoitmentByDate(date);
+            const data = await fetchDeletedAppoitmentByDate(date);
 
             const sortedData = data.sort((a, b) => {
                 const tokenA = a.tokenNo !== null ? parseInt(a.tokenNo, 10) : Infinity;
@@ -88,7 +88,7 @@ const AppointmentReport = () => {
         printWindow.document.write(`
             <html>
                 <head>
-                    <title>Print Appointment Report</title>
+                    <title>Print Deleted Appointment Report</title>
                     <style>
                         @media print {
                             body {
@@ -116,7 +116,7 @@ const AppointmentReport = () => {
                     </style>
                 </head>
                 <body>
-                    <h2>Appointment Report</h2>
+                    <h2>Deleted Appointment Report</h2>
                     <div class="printable-table">
                         <table>
                             <thead>
@@ -198,7 +198,7 @@ const AppointmentReport = () => {
 
     return (
         <div style={{ marginRight: '4%' }}>
-            <h2 className="report-heading">Appointment Report</h2>
+            <h2 className="report-heading">Deleted Appointment Report</h2>
 
             {/* Date Filter */}
             <div className="report-filter">
@@ -297,4 +297,4 @@ const AppointmentReport = () => {
     );
 };
 
-export default AppointmentReport;
+export default DeletedAppointmentReport;
