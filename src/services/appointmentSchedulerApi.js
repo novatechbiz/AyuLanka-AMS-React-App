@@ -109,9 +109,9 @@ export const fetchTreatmentTypesByLocation = async () => {
   }
 };
 
-export const deleteAppointment = async (appointmentId, userId) => {
+export const deleteAppointment = async (appointmentId, userId, remark) => {
   try {
-    const response = await api.delete(`/appointmentschedule/${appointmentId}?deletedByUserId=${userId}`);
+    const response = await api.delete(`/appointmentschedule/${appointmentId}?deletedByUserId=${userId}&remark=${remark}`);
     return response.data;  // Assuming the response data is the confirmation of deletion
   } catch (error) {
     console.error("Error deleting appointment:", error);
@@ -150,9 +150,19 @@ export const fetchAppoitmentByDate = async (date) => {
   }
 };
 
-export const fetchDeletedAppoitmentByDate = async (date) => {
+export const fetchDeletedAppoitmentByDate = async (startDate, endDate) => {
+  console.log(startDate, ' ', endDate)
+
+  // Ensure startDate and endDate are valid Date objects
+  const start = typeof startDate === "string" ? new Date(startDate) : startDate;
+  const end = typeof endDate === "string" ? new Date(endDate) : endDate;
   try {
-    const response = await api.get(`/AppointmentSchedule/DeletedAppointmentsByDate/${date}`);
+    const response = await axios.get(`${API_BASE_URL}/appointmentschedule/DeletedAppointmentsByDateRange`, {
+      params: {
+        startDate: start.toISOString().substring(0, 10), // Format as YYYY-MM-DD
+        endDate: end.toISOString().substring(0, 10)      // Format as YYYY-MM-DD
+      }
+    });
     return response.data;  // Assuming the API returns an array of appointments
   } catch (error) {
     console.error("Error fetching day offs:", error);
