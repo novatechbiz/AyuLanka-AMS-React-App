@@ -1,0 +1,135 @@
+/* appointmentReport.css */
+
+/* Table Styling */
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+/* Scrollable Table Container */
+.scrollable-table-container {
+    max-height: 400px;
+    /* Adjust as needed */
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    /* Optional: adds a border around the container */
+    border-radius: 4px;
+    /* Optional: rounds the corners */
+}
+
+
+.report-table th,
+.report-table td {
+    padding: 12px 15px;
+    text-align: left;
+}
+
+.report-table th {
+    background-color: #0056b3;
+    color: white;
+    text-wrap: nowrap;
+}
+
+.report-table td {
+    color: #333;
+    border-bottom: 1px solid #ddd;
+}
+
+.report-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.report-table tr:hover {
+    background-color: #f1f1f1;
+}
+
+.report-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Filter and Button Styling */
+.report-filter {
+    margin-bottom: 15px;
+}
+
+.report-date-input {
+    padding: 8px;
+    font-size: 14px;
+    margin-right: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.report-filter-button {
+    padding: 8px 16px;
+    font-size: 14px;
+    background-color: #0056b3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.report-filter-button:hover {
+    background-color: #2c3e50;
+}
+
+/* Heading Styling */
+.report-heading {
+    font-family: Arial, sans-serif;
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;
+    border-bottom: 3px solid #0056b3;
+    padding-bottom: 5px;
+    display: inline-block;
+}
+
+.report-search-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.report-buttons {
+    display: flex;
+    justify-content: flex-end;
+    /* Aligns items to the right */
+    margin-top: 20px;
+    /* Optional: Adds space above the buttons */
+}
+
+.report-button {
+    width: 160px;
+    /* Set a specific width for the buttons */
+    margin-left: 10px;
+    /* Optional: Adds space between buttons */
+    padding: 8px 12px;
+    /* Padding for better appearance */
+    background-color: #0056b3;
+    /* Button background color */
+    color: white;
+    /* Button text color */
+    border: none;
+    /* Removes default border */
+    border-radius: 4px;
+    /* Optional: Adds rounded corners */
+    cursor: pointer;
+    /* Changes cursor to pointer on hover */
+    transition: background-color 0.3s;
+    /* Adds a transition effect */
+}
+
+.report-button:hover {
+    background-color: #2c3e50;
+    /* Darker shade on hover */
+}

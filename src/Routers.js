@@ -19,6 +19,7 @@ import Logout from "./components/logout/logout";
 import AppointmentReport from "./components/Reports/appointmentReport/appointmentReport";
 import StaffWiseAppointmentSummaryReport from "./components/Reports/staffWiseAppointmentSummaryReport/staffWiseAppointmentSummaryReport";
 import StaffWiseTreatmentSummaryReport from "./components/Reports/staffWiseTreatmentSummaryReport/staffWiseTreatmentSummaryReport";
+import DeletedAppointmentReport from "./components/Reports/deletedAppointmentReport/deletedAppointmentReport";
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -51,6 +52,7 @@ const Routers = () => {
         <Route path="/approve-dayoff" element={<ApproveDayOff />} />
         <Route path="/change-shift" element={<ChangeShift />} />
         <Route path="/approve-shift" element={<ApproveShift />} />
+        <Route path="/deleted-appointment-report" element={<DeletedAppointmentReport />} />
         <Route path="/appointment-report" element={<AppointmentReport />} />
         <Route path="/staff-appointment-summary-report" element={<StaffWiseAppointmentSummaryReport />} />
         <Route path="/staff-treatment-summary-report" element={<StaffWiseTreatmentSummaryReport />} />
