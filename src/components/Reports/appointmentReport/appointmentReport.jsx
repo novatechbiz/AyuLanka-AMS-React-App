@@ -1,16 +1,27 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx'; // Import XLSX library
 import './appointmentReport.css';
-import { fetchAppoitmentByDate } from '../../../services/appointmentSchedulerApi';
+import { fetchAppointmentsByDateRange } from '../../../services/appointmentSchedulerApi';
 
 const AppointmentReport = () => {
     const [appointments, setAppointments] = useState([]);
     const [dateFilter, setDateFilter] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
 
     const fetchAppointments = async (date) => {
         try {
-            const data = await fetchAppoitmentByDate(date);
+            if (!startDate || !endDate) {
+                alert('Please select both start and end dates.');
+                return;
+            }
+
+            const start = new Date(startDate); // Convert to Date object
+            const end = new Date(endDate);     // Convert to Date object
+            const data = await fetchAppointmentsByDateRange(start, end);
+
+            //const data = await fetchAppoitmentByDate(date);
 
             const sortedData = data.sort((a, b) => {
                 const tokenA = a.tokenNo !== null ? parseInt(a.tokenNo, 10) : Infinity;
@@ -202,18 +213,27 @@ const AppointmentReport = () => {
 
             {/* Date Filter */}
             <div className="report-filter">
-                <div className='row'>
-                    <div className='col-md-3'>
-                        <label>Date:</label>&nbsp;&nbsp;&nbsp;
+                <div className="row">
+                    <div className="col-md-2">
                         <input
                             type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
                             className="report-date-input"
-                            value={dateFilter}
-                            onChange={(e) => setDateFilter(e.target.value)}
+                            placeholder="Start Date"
                         />
                     </div>
-                    <div className='col-md-2'>
-                        <button className="report-filter-button" onClick={() => fetchAppointments(dateFilter)}>
+                    <div className="col-md-2">
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="report-date-input"
+                            placeholder="End Date"
+                        />
+                    </div>
+                    <div className="col-md-2">
+                        <button className="report-filter-button" onClick={fetchAppointments}>
                             Filter
                         </button>
                     </div>
