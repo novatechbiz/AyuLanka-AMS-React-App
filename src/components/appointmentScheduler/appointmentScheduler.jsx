@@ -35,6 +35,7 @@ function AppointmentScheduler() {
         scheduleDate: new Date(),
         employeeId: '',
         secondaryEmployeeId: '',
+        doctorEmployeeId: '',
         customerName: '',
         contactNo: '',
         tokenNo: '',
@@ -46,6 +47,7 @@ function AppointmentScheduler() {
         appoinmentTreatments: [], // Initialize appoinmentTreatments as an empty array
     });
     const [employees, setEmployees] = useState([]);
+    const [doctors, setDoctors] = useState([]);
     const [treatmentTypes, setTreatmentTypes] = useState([]);
     const [resources, setResources] = useState([]);
     const [selectedEventId, setSelectedEventId] = useState(null);
@@ -88,8 +90,10 @@ function AppointmentScheduler() {
 
                 // Filter employees with designationCode 'MA'
                 const filteredEmployees = empData.filter(employee => employee.designation?.designationCode === 'MA');
+                const filteredDoctors = empData.filter(employee => employee.designation?.designationCode === 'ADT');
 
                 setEmployees(filteredEmployees);
+                setDoctors(filteredDoctors);
                 setResources(treatmentLocationData);
             } catch (error) {
                 console.error('Error loading data from API:', error);
@@ -150,8 +154,8 @@ function AppointmentScheduler() {
     const formatAppointments = (appointments) => {
         return appointments.map(appointment => {
             const datePart = appointment.scheduleDate.split('T')[0]; // Get only the date part
-            const startDateTime = `${datePart}T${appointment.fromTime}`; // Correctly format start datetime
-            const endDateTime = `${datePart}T${appointment.toTime}`; // Correctly format end datetime
+            const startDateTime = appointment.actualFromTime != null ? `${datePart}T${appointment.actualFromTime}` : `${datePart}T${appointment.fromTime}`; // Correctly format start datetime
+            const endDateTime = appointment.actualToTime != null ? `${datePart}T${appointment.actualToTime}` : `${datePart}T${appointment.toTime}`; // Correctly format end datetime
 
             const start = new Date(startDateTime);
             const end = new Date(endDateTime);
@@ -473,6 +477,7 @@ function AppointmentScheduler() {
             ScheduleDate: appointmentData.scheduleDate,
             EmployeeId: appointmentData.employeeId ? appointmentData.employeeId : 0,
             SecondaryEmployeeId: appointmentData.secondaryEmployeeId ? appointmentData.secondaryEmployeeId : 0,
+            DoctorEmployeeId: appointmentData.doctorEmployeeId ? appointmentData.doctorEmployeeId : 0,
             CustomerName: appointmentData.customerName,
             ContactNo: appointmentData.contactNo,
             FromTime: formatTimeForCSharp(appointmentData.startTime),
@@ -521,8 +526,9 @@ function AppointmentScheduler() {
 
 
     const refreshAppointments = async () => {
-        const updatedAppointments = await fetchAppointments();
-        setCurrentEvents(formatAppointments(updatedAppointments));
+        window.location.reload();
+        // const updatedAppointments = await fetchAppointments();
+        // setCurrentEvents(formatAppointments(updatedAppointments));
     };
 
     const resetAppointmentForm = () => {
@@ -532,6 +538,7 @@ function AppointmentScheduler() {
             treatmentTypeId: [],
             employeeId: '',
             secondaryEmployeeId: '',
+            doctorEmployeeId: '',
             customerName: '',
             contactNo: '',
             tokenNo: '',
@@ -733,6 +740,7 @@ function AppointmentScheduler() {
                 treatmentTypeId: treatmentTypeIds,
                 employeeId: appointmentDetails.employeeId ? appointmentDetails.employeeId.toString() : 0,
                 secondaryEmployeeId: appointmentDetails.secondaryEmployeeId ? appointmentDetails.secondaryEmployeeId.toString() : 0,
+                doctorEmployeeId: appointmentDetails.doctorEmployeeId ? appointmentDetails.doctorEmployeeId.toString() : 0,
                 customerName: appointmentDetails.customerName,
                 contactNo: appointmentDetails.contactNo,
                 tokenNo: appointmentDetails.tokenNo,
@@ -747,6 +755,7 @@ function AppointmentScheduler() {
                 //TreatmentTypeId: filteredTreatmentType.id,
                 EmployeeId: appointmentDetails.employeeId ? appointmentDetails.employeeId : 0,
                 SecondaryEmployeeId: appointmentDetails.secondaryEmployeeId ? appointmentDetails.secondaryEmployeeId : 0,
+                DoctorEmployeeId: appointmentDetails.doctorEmployeeId ? appointmentDetails.doctorEmployeeId : 0,
                 CustomerName: appointmentDetails.customerName,
                 ContactNo: appointmentDetails.contactNo,
                 FromTime: moment(startTime).format('HH:mm:ss'),
@@ -1077,6 +1086,7 @@ function AppointmentScheduler() {
                 actualSecondEndTime: actualSecondEndTime,
                 employeeId: appointmentDetails.employeeId ? appointmentDetails.employeeId.toString() : "",
                 secondaryEmployeeId: appointmentDetails.secondaryEmployeeId ? appointmentDetails.secondaryEmployeeId.toString() : "",
+                doctorEmployeeId: appointmentDetails.doctorEmployeeId ? appointmentDetails.doctorEmployeeId.toString() : "",
                 customerName: appointmentDetails.customerName,
                 contactNo: appointmentDetails.contactNo,
                 tokenNo: appointmentDetails.tokenNo,
@@ -1138,6 +1148,7 @@ function AppointmentScheduler() {
                         treatmentTypeId: '',
                         employeeId: '',
                         secondaryEmployeeId: '',
+                        doctorEmployeeId: '',
                         startTime: selectInfo.start,
                         customerName: '',
                         contactNo: ''
@@ -1353,6 +1364,13 @@ function AppointmentScheduler() {
                                     </div>
                                 </div>
                                 <div className="row">
+                                    <div className="col-md-6 form-group">
+                                        <label htmlFor="doctorEmployeeId">Doctor</label>
+                                        <select className={`form-control ${formErrors.doctorEmployeeId ? 'is-invalid' : ''}`} id="doctorEmployeeId" name="doctorEmployeeId" value={appointmentData.doctorEmployeeId} onChange={handleInputChange}>
+                                            <option value="">Select a Doctor</option>
+                                            {doctors.map(emp => <option key={emp.id} value={emp.id}>{emp.employeeNumber} - {emp.callingName}</option>)}
+                                        </select>
+                                    </div>
                                     <div className="col-md-6 form-group">
                                         <label htmlFor="tokenNo">Token Number</label>
                                         <input className="form-control" type="text" id="tokenNo" name="tokenNo" value={appointmentData.tokenNo} onChange={handleInputChange} />

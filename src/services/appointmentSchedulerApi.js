@@ -191,6 +191,48 @@ export const fetchAppointmentsByDateRange = async (startDate, endDate) => {
   }
 };
 
+export const fetchAllAppointmentsByDateRange = async (startDate, endDate) => {
+  console.log(startDate, ' ', endDate)
+
+  // Ensure startDate and endDate are valid Date objects
+  const start = typeof startDate === "string" ? new Date(startDate) : startDate;
+  const end = typeof endDate === "string" ? new Date(endDate) : endDate;
+
+  try {
+    const response = await axios.get(`${API_BASE_URL}/appointmentschedule/getAllPreScheduledScheduledAppointments`, {
+      params: {
+        startDate: start.toISOString().substring(0, 10), // Format as YYYY-MM-DD
+        endDate: end.toISOString().substring(0, 10)      // Format as YYYY-MM-DD
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching getAllPreScheduledScheduledAppointments:", error);
+    throw error;
+  }
+};
+
+export const fetchCompletedAppointmentsByDateRange = async (startDate, endDate) => {
+  console.log(startDate, ' ', endDate)
+
+  // Ensure startDate and endDate are valid Date objects
+  const start = typeof startDate === "string" ? new Date(startDate) : startDate;
+  const end = typeof endDate === "string" ? new Date(endDate) : endDate;
+
+  try {
+    const response = await axios.get(`${API_BASE_URL}/appointmentschedule/getCompletedPreScheduledScheduledAppointments`, {
+      params: {
+        startDate: start.toISOString().substring(0, 10), // Format as YYYY-MM-DD
+        endDate: end.toISOString().substring(0, 10)      // Format as YYYY-MM-DD
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching getCompletedPreScheduledScheduledAppointments:", error);
+    throw error;
+  }
+};
+
 export const fetchLeaveData = async (date) => {
   try {
     const response = await api.get(`/staffleave/getleavesbydate/${date}`);
