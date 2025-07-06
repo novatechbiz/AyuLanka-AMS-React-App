@@ -111,6 +111,9 @@ const Sidebar = () => {
                     <Link to="/appointment-report">Appointment Report</Link>
                   </li>
                   <li>
+                    <Link to="/appointment-completion-rate-report">Appointment Completion Rate Report</Link>
+                  </li>
+                  <li>
                     <Link to="/deleted-appointment-report">Deleted Appointment Report</Link>
                   </li>
                   <li>

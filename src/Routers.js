@@ -20,6 +20,7 @@ import AppointmentReport from "./components/Reports/appointmentReport/appointmen
 import StaffWiseAppointmentSummaryReport from "./components/Reports/staffWiseAppointmentSummaryReport/staffWiseAppointmentSummaryReport";
 import StaffWiseTreatmentSummaryReport from "./components/Reports/staffWiseTreatmentSummaryReport/staffWiseTreatmentSummaryReport";
 import DeletedAppointmentReport from "./components/Reports/deletedAppointmentReport/deletedAppointmentReport";
+import AppointmentCompletionRateReport from "./components/Reports/appointmentCompletionRateReport/appointmentCompletionRateReport";
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -56,6 +57,7 @@ const Routers = () => {
         <Route path="/appointment-report" element={<AppointmentReport />} />
         <Route path="/staff-appointment-summary-report" element={<StaffWiseAppointmentSummaryReport />} />
         <Route path="/staff-treatment-summary-report" element={<StaffWiseTreatmentSummaryReport />} />
+        <Route path="/appointment-completion-rate-report" element={<AppointmentCompletionRateReport />} />
         <Route path="/logout" element={<Logout />} />
       </Routes>
     </Layout>
