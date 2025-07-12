@@ -155,7 +155,27 @@ function AppointmentScheduler() {
         return appointments.map(appointment => {
             const datePart = appointment.scheduleDate.split('T')[0]; // Get only the date part
             const startDateTime = appointment.actualFromTime != null ? `${datePart}T${appointment.actualFromTime}` : `${datePart}T${appointment.fromTime}`; // Correctly format start datetime
-            const endDateTime = appointment.actualToTime != null ? `${datePart}T${appointment.actualToTime}` : `${datePart}T${appointment.toTime}`; // Correctly format end datetime
+            let endDateTime;
+            if (appointment.actualToTime == null && appointment.actualFromTime == null) {
+                endDateTime = `${datePart}T${appointment.toTime}`;
+            } else if (appointment.actualFromTime != null && appointment.actualToTime == null) {
+                // Calculate duration from original times and add to actualFromTime
+                const fromTime = new Date(`${datePart}T${appointment.fromTime}`);
+                const toTime = new Date(`${datePart}T${appointment.toTime}`);
+                const duration = toTime - fromTime;
+
+                const actualFromTime = new Date(`${datePart}T${appointment.actualFromTime}`);
+                const calculatedEndTime = new Date(actualFromTime.getTime() + duration);
+
+                // Format the calculated end time back to ISO string and extract the time part
+                const calculatedTime = calculatedEndTime.toISOString().split('T')[1].slice(0, 8);
+                endDateTime = `${datePart}T${calculatedTime}`;
+            } else if (appointment.actualToTime != null) {
+                endDateTime = `${datePart}T${appointment.actualToTime}`;
+            } else {
+                // Fallback case (shouldn't happen based on your conditions)
+                endDateTime = `${datePart}T${appointment.toTime}`;
+            }
 
             const start = new Date(startDateTime);
             const end = new Date(endDateTime);
