@@ -1243,7 +1243,11 @@ function AppointmentScheduler() {
                                         <Autocomplete
                                             multiple
                                             options={treatmentTypes}
-                                            getOptionLabel={(option) => option.name} // Adjust based on your data structure
+                                            getOptionLabel={(option) =>
+                                                option.treatmentShortCode
+                                                    ? `${option.name} - ${option.treatmentShortCode}`
+                                                    : option.name
+                                            } // Adjust based on your data structure
                                             value={treatmentTypes.filter(type => appointmentData.treatmentTypeId.includes(type.id))} // Selected values
                                             onChange={(event, value) => handleMultipleTreatmentTypeChange(event, value)} // Pass the selected values directly
                                             renderInput={(params) => (
