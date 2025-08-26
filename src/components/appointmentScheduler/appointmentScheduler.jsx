@@ -188,7 +188,7 @@ function AppointmentScheduler() {
                 // Fallback case (shouldn't happen based on your conditions)
                 endDateTime = `${datePart}T${appointment.toTime}`;
             }
-
+            console.log('endDateTimeeeeeeee', endDateTime)
             const start = new Date(startDateTime);
             const end = new Date(endDateTime);
 
