@@ -164,12 +164,23 @@ function AppointmentScheduler() {
                 const toTime = new Date(`${datePart}T${appointment.toTime}`);
                 const duration = toTime - fromTime;
 
+                console.log('fromTime', fromTime)
+                console.log('toTime', fromTime)
+                console.log('duration', fromTime)
+
                 const actualFromTime = new Date(`${datePart}T${appointment.actualFromTime}`);
                 const calculatedEndTime = new Date(actualFromTime.getTime() + duration);
+
+                console.log('actualFromTime', actualFromTime)
+                console.log('calculatedEndTime', calculatedEndTime)
+
 
                 // Format the calculated end time back to ISO string and extract the time part
                 const calculatedTime = calculatedEndTime.toISOString().split('T')[1].slice(0, 8);
                 endDateTime = `${datePart}T${calculatedTime}`;
+
+                console.log('calculatedTime', calculatedTime)
+                console.log('endDateTime', endDateTime)
             } else if (appointment.actualToTime != null) {
                 endDateTime = `${datePart}T${appointment.actualToTime}`;
             } else {
