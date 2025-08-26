@@ -178,7 +178,7 @@ function AppointmentScheduler() {
 
                 // Format the calculated end time back to ISO string and extract the time part
                 const calculatedTime = calculatedEndTime.toISOString().split('T')[1].slice(0, 8);
-                endDateTime = `${datePart}T${calculatedTime}`;
+                endDateTime = `${datePart}T${calculatedEndTime}`;
 
                 console.log('calculatedTime', calculatedTime)
                 console.log('endDateTime', endDateTime)
