@@ -153,71 +153,80 @@ function AppointmentScheduler() {
 
     const formatAppointments = (appointments) => {
         return appointments.map(appointment => {
-            const datePart = appointment.scheduleDate.split('T')[0]; // Get only the date part
-            const startDateTime = appointment.actualFromTime != null ? `${datePart}T${appointment.actualFromTime}` : `${datePart}T${appointment.fromTime}`; // Correctly format start datetime
+            const datePart = appointment.scheduleDate.split('T')[0]; // e.g. "2025-08-26"
+
+            // --- Start datetime ---
+            const startDateTime = appointment.actualFromTime
+                ? new Date(`${datePart}T${appointment.actualFromTime}`)
+                : new Date(`${datePart}T${appointment.fromTime}`);
+
             let endDateTime;
-            if (appointment.actualToTime == null && appointment.actualFromTime == null) {
-                endDateTime = `${datePart}T${appointment.toTime}`;
-            } else if (appointment.actualFromTime != null && appointment.actualToTime == null) {
-                // Calculate duration from original times and add to actualFromTime
+
+            // --- Case 1: no actual times, just planned ---
+            if (!appointment.actualFromTime && !appointment.actualToTime) {
+                endDateTime = new Date(`${datePart}T${appointment.toTime}`);
+            }
+            // --- Case 2: actual start but no actual end => calculate based on duration ---
+            else if (appointment.actualFromTime && !appointment.actualToTime) {
                 const fromTime = new Date(`${datePart}T${appointment.fromTime}`);
                 const toTime = new Date(`${datePart}T${appointment.toTime}`);
-                const duration = toTime - fromTime;
+                const duration = toTime.getTime() - fromTime.getTime();
 
-                console.log('appointment.customerNameeeeeeeeeeeeeeeeeee', appointment.customerName)
-                console.log('fromTime', fromTime)
-                console.log('toTime', toTime)
-                console.log('duration', duration)
+                console.log('appointment.customerName', appointment.customerName);
+                console.log('planned fromTime', fromTime);
+                console.log('planned toTime', toTime);
+                console.log('duration ms', duration);
 
                 const actualFromTime = new Date(`${datePart}T${appointment.actualFromTime}`);
                 const calculatedEndTime = new Date(actualFromTime.getTime() + duration);
 
-                console.log('actualFromTime', actualFromTime)
-                console.log('calculatedEndTime', calculatedEndTime)
+                console.log('actualFromTime', actualFromTime);
+                console.log('calculatedEndTime', calculatedEndTime);
 
-
-                // Format the calculated end time back to ISO string and extract the time part
-                const calculatedTime = calculatedEndTime.toISOString().split('T')[1].slice(0, 8);
-                endDateTime = `${datePart}T${calculatedEndTime}`;
-
-                console.log('calculatedTime', calculatedTime)
-                console.log('endDateTime', endDateTime)
-            } else if (appointment.actualToTime != null) {
-                endDateTime = `${datePart}T${appointment.actualToTime}`;
-            } else {
-                // Fallback case (shouldn't happen based on your conditions)
-                endDateTime = `${datePart}T${appointment.toTime}`;
+                endDateTime = calculatedEndTime;
             }
-            console.log('endDateTimeeeeeeee', endDateTime)
-            const start = new Date(startDateTime);
-            const end = new Date(endDateTime);
+            // --- Case 3: actual end provided ---
+            else if (appointment.actualToTime) {
+                endDateTime = new Date(`${datePart}T${appointment.actualToTime}`);
+            }
+            // --- Fallback (shouldn't happen) ---
+            else {
+                endDateTime = new Date(`${datePart}T${appointment.toTime}`);
+            }
 
-            console.log("appointment.treatmentTypeId", appointment);      // Log the parsed end date
+            console.log('final startDateTime', startDateTime.toISOString());
+            console.log('final endDateTime', endDateTime.toISOString());
 
             // Get all treatment types and join them with commas
             const treatmentTypes = appointment.appointmentTreatments
-                .map(treatment => treatment.treatmentType.name)
-                .join(', ');
-
-            console.log("treatmentTypes", treatmentTypes);
+                ? appointment.appointmentTreatments
+                    .map(treatment => treatment.treatmentType.name)
+                    .join(', ')
+                : "";
 
             return {
                 id: appointment.id,
                 title: `${appointment.customerName}`,
-                start: start,
-                end: end,
+                start: startDateTime,  // FullCalendar accepts Date objects directly
+                end: endDateTime,      // Use proper Date object, not string
                 resourceId: appointment.locationId.toString(),
                 employeeId: appointment.employeeId,
-                backgroundColor: getBackgroundColor(appointment.employeeId, appointment.tokenNo, appointment.actualFromTime, appointment.actualToTime),
+                backgroundColor: getBackgroundColor(
+                    appointment.employeeId,
+                    appointment.tokenNo,
+                    appointment.actualFromTime,
+                    appointment.actualToTime
+                ),
                 extendedProps: {
                     contactNo: appointment.contactNo,
                     tokenNo: appointment.tokenNo,
-                    employeeName: appointment.employee ? appointment.employee.callingName : "", // Add employee name
-                    treatmentTypes: treatmentTypes  // Add treatment types joined by commas
+                    employeeName: appointment.employee ? appointment.employee.callingName : "",
+                    treatmentTypes: treatmentTypes
                 }
             };
         });
     };
+
 
 
 
