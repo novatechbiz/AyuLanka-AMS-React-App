@@ -164,9 +164,10 @@ function AppointmentScheduler() {
                 const toTime = new Date(`${datePart}T${appointment.toTime}`);
                 const duration = toTime - fromTime;
 
+                console.log('appointment.customerNameeeeeeeeeeeeeeeeeee', appointment.customerName)
                 console.log('fromTime', fromTime)
-                console.log('toTime', fromTime)
-                console.log('duration', fromTime)
+                console.log('toTime', toTime)
+                console.log('duration', duration)
 
                 const actualFromTime = new Date(`${datePart}T${appointment.actualFromTime}`);
                 const calculatedEndTime = new Date(actualFromTime.getTime() + duration);
