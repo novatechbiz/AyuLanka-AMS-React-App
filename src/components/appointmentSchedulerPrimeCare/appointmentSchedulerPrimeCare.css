@@ -1,0 +1,318 @@
+.Modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 800px;
+    /* Reduced width for better appearance */
+    width: 100%;
+    /* Responsive width, adjusted for smaller screens */
+    background: white;
+    border-radius: 5px;
+    overflow: hidden;
+    z-index: 1050;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.Overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.75);
+    z-index: 1040;
+}
+
+.close {
+    font-size: 0.9rem;
+    padding: 0.5rem;
+    color: #aaa;
+    cursor: pointer;
+    /* Added cursor pointer for better UX */
+    background-color: transparent;
+}
+
+.modal-content {
+    padding: 10px;
+    max-height: 650px;
+    overflow-y: scroll;
+}
+
+.modal-header {
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 0.5rem;
+}
+
+.modal-title-appointment {
+    font-size: 1.4rem !important;
+}
+
+.modal-appoinment-body {
+    max-height: 75vh !important;
+    text-align: left !important;
+    margin-top: 20px !important;
+    margin-bottom: 40px !important;
+}
+
+.modal-body input,
+.modal-body select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.modal-footer {
+    padding: 10px 20px;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: flex-end;
+}
+
+button.cancel-button {
+    background-color: #6c757d;
+}
+
+.modal-footer .btn {
+    padding: 10px 15px;
+    /* Provides ample padding and influences height */
+    font-size: 16px;
+    /* Ensures text size is consistent */
+    line-height: 1.5;
+    /* Affects the height of the button */
+    border-radius: 4px;
+    /* Optional: Adjusts the curvature of the button edges */
+}
+
+/* General calendar styles */
+.fc {
+    font-size: 1rem;
+    /* Adjust to match the modal's font sizing */
+    color: #333;
+    /* Ensures text is readable */
+}
+
+/* Header styles */
+.fc-header-toolbar {
+    padding: 10px;
+    /* Adds padding around the header for spacing */
+    background-color: #f8f9fa;
+    /* Light background for the header */
+    border-bottom: 1px solid #dee2e6;
+    /* Adds a subtle separator */
+}
+
+/* Button styles in the header */
+.fc button {
+    color: #007bff;
+    /* Bootstrap primary color for buttons */
+    background-color: white;
+    border: 1px solid #dee2e6;
+    /* Subtle borders for buttons */
+    padding: 5px 10px;
+}
+
+.fc button:hover {
+    background-color: #f0f0f0;
+    /* Slight highlight on hover */
+}
+
+/* Today and event styling */
+.fc .fc-day-today {
+    background-color: #e9ecef;
+    /* Light grey background for 'today' */
+    border: 1px solid #ced4da;
+    /* Slightly darker border */
+}
+
+.fc-event {
+    background-color: #007bff;
+    /* Bootstrap primary color for events */
+    color: white;
+    /* Ensures event text is readable */
+    padding: 2px 5px;
+    /* Small padding within events */
+    border-radius: 3px;
+    /* Rounded corners for events */
+}
+
+.fc .fc-event {
+    border-radius: 10px;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2);
+    /* Adds a subtle shadow */
+}
+
+/* Agenda views specifics */
+.fc-agenda-view .fc-day-grid {
+    background-color: #fdfdfe;
+    /* Very light background for day grid */
+}
+
+.fc-agenda-view .fc-time-grid {
+    background-color: #fdfdfe;
+    /* Consistent with day grid */
+}
+
+/* Ensuring that the full calendar is responsive */
+.fc {
+    width: 100%;
+}
+
+.fc-button-group {
+    float: right;
+    margin-top: 20px;
+}
+
+.fc-today-button {
+    background-color: green !important;
+}
+
+/* Overlay style */
+.ReactModal__Overlay {
+    opacity: 0;
+    transition: opacity 500ms ease-in-out;
+}
+
+.ReactModal__Overlay--after-open {
+    opacity: 1;
+}
+
+.ReactModal__Overlay--before-close {
+    opacity: 0;
+}
+
+/* Modal content style */
+.ReactModal__Content {
+    transition: all 300ms ease-in-out;
+    transform: translate(-50%, -50%) scale(1);
+    /* Ensures centering and scaling */
+    border-radius: 5px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    opacity: 1;
+    /* Starts with full opacity */
+}
+
+.ReactModal__Content--after-open {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.ReactModal__Content--before-close {
+    transform: translate(-50%, -50%) scale(0.8);
+}
+
+.is-invalid {
+    border-color: #dc3545;
+    background-color: #fae3e3;
+}
+
+.custom-modal-footer {
+    padding: 10px 20px;
+    border-top: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+    display: flex;
+    flex-direction: row;
+    /* Ensure horizontal alignment by default */
+    justify-content: space-between;
+}
+
+.fc-license-message {
+    display: none;
+}
+
+.button-container {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.button-container .btn {
+    margin: 5px;
+}
+
+.hour-slot-event {
+    background-color: transparent !important;
+    border: none !important;
+}
+
+.hour-slot-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+.hour-slot-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 8px;
+    transition: all 0.2s ease;
+}
+
+.hour-slot-item:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+}
+
+/* Ensure the calendar cells have proper height */
+.fc-timegrid-slot {
+    height: 30px !important;
+    /* Adjust based on your needs */
+}
+
+.fc-timegrid-event-harness {
+    height: 30px !important;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .custom-modal-content {
+        width: 95%;
+        height: 80vh;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .custom-modal-header,
+    .custom-modal-footer {
+        padding: 10px;
+    }
+
+    .custom-modal-title-appointment {
+        font-size: 1.2rem;
+    }
+
+    .custom-modal-body {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    /* .custom-modal-footer {
+        flex-shrink: 0;
+        flex-direction: column;
+        align-items: stretch;
+    } */
+    button.custom-button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    button.custom-button:last-child {
+        margin-bottom: 0;
+    }
+}
+
+@media (max-width: 576px) {
+
+    .custom-modal-header,
+    .custom-modal-footer {
+        padding: 10px;
+    }
+
+    .custom-modal-title-appointment {
+        font-size: 1.2rem;
+    }
+}

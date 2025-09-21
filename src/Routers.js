@@ -21,6 +21,9 @@ import StaffWiseAppointmentSummaryReport from "./components/Reports/staffWiseApp
 import StaffWiseTreatmentSummaryReport from "./components/Reports/staffWiseTreatmentSummaryReport/staffWiseTreatmentSummaryReport";
 import DeletedAppointmentReport from "./components/Reports/deletedAppointmentReport/deletedAppointmentReport";
 import AppointmentCompletionRateReport from "./components/Reports/appointmentCompletionRateReport/appointmentCompletionRateReport";
+import AppointmentSchedulerPrimeCare from "./components/appointmentSchedulerPrimeCare/appointmentSchedulerPrimeCare";
+import TokenGenerate from "./components/tokenGenerate/TokenGenerate";
+import TokenDashboard from "./components/tokenDashboard/tokenDashboard";
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -45,7 +48,10 @@ const Routers = () => {
         <Route path="/apply-leave" element={<ApplyLeave />} />
         <Route path="/attendance-upload" element={<ManageAttendance />} />
         <Route path="/employee-roster" element={<EmployeeRoster />} />
-        <Route path="/appoinment-schedular" element={<AppointmentScheduler />} />
+        <Route path="/token-generate" element={<TokenGenerate />} />
+        <Route path="/token-dashboard" element={<TokenDashboard />} />
+        <Route path="/appoinment-schedular-elitecare" element={<AppointmentScheduler />} />
+        <Route path="/appoinment-schedular-primecare" element={<AppointmentSchedulerPrimeCare />} />
         <Route path="/update-roster" element={<UpdateRoster />} />
         <Route path="/approve-roster" element={<ApproveRoster />} />
         <Route path="/view-roster" element={<ViewRoster />} />

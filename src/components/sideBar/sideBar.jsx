@@ -127,9 +127,20 @@ const Sidebar = () => {
             </li>
           ) : null}
           {designationCode === "SAD" || designationCode === "AD" || designationCode === "RP" || designationCode === "ADT" ? (
-            <li>
-              <Link to="/appoinment-schedular">Appointment Scheduler</Link>
-            </li>
+            <>
+              <li>
+                <Link to="/token-generate">Token Generate</Link>
+              </li>
+              <li>
+                <Link to="/token-dashboard">Appointment Dashboard</Link>
+              </li>
+              <li>
+                <Link to="/appoinment-schedular-elitecare">Appointment Scheduler - Elite Care</Link>
+              </li>
+              <li>
+                <Link to="/appoinment-schedular-primecare">Appointment Scheduler - Prime Care</Link>
+              </li>
+            </>
           ) : null}
         </ul>
 

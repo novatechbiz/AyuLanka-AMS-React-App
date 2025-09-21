@@ -7,8 +7,8 @@ import Modal from 'react-modal';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './appointmentScheduler.css'; // Ensure this file contains your custom styles
-import { fetchAppointmentsByDateRange, deleteAppointment, fetchEmployees, fetchEmployeeSchedule, fetchEliteCareTreatmentLocations, addAppointment, fetchAppointments, fetchTreatmentTypesByLocation, fetchAppointmentDetails, fetchLeaveData, fetchDayOffsData, fetchShiftsData } from '../../services/appointmentSchedulerApi.js';
+import './appointmentSchedulerPrimeCare.css'; // Ensure this file contains your custom styles
+import { fetchPrimeCareAppointmentsByDateRange, deleteAppointment, fetchEmployees, fetchEmployeeSchedule, fetchPrimeCareTreatmentLocations, addAppointment, fetchAppointments, fetchTreatmentTypesByLocation, fetchAppointmentDetails, fetchLeaveData, fetchDayOffsData, fetchShiftsData } from '../../services/appointmentSchedulerApi.js';
 import { ConfirmationModal } from '../confirmationModal/confirmationModal.jsx';
 import { NotificationComponent } from '../notificationComponent/notificationComponent.jsx';
 import AppointmentModalComponent from '../appointmentModalComponent/appointmentModalComponent.jsx';
@@ -22,7 +22,7 @@ import { ConfirmationModalForValidation } from '../confirmationModalForValidatio
 
 Modal.setAppElement('#root');
 
-function AppointmentScheduler() {
+function AppointmentSchedulerPrimeCare() {
     const [currentEvents, setCurrentEvents] = useState([]);
     const [dropEvent, setDropEvent] = useState([]);
     const [modalIsOpen, setModalIsOpen] = useState(false);
@@ -85,7 +85,7 @@ function AppointmentScheduler() {
                 const [empData, treatmentLocationData] = await Promise.all([
                     fetchEmployees(),
                     // fetchTreatmentTypes(),
-                    fetchEliteCareTreatmentLocations(),
+                    fetchPrimeCareTreatmentLocations(),
                 ]);
 
                 // Filter employees with designationCode 'MA'
@@ -106,7 +106,7 @@ function AppointmentScheduler() {
     const handleDatesSet = async (dateInfo) => {
         const { startStr, endStr } = dateInfo;
         try {
-            const appointments = await fetchAppointmentsByDateRange(startStr, endStr);
+            const appointments = await fetchPrimeCareAppointmentsByDateRange(startStr, endStr);
             setCurrentEvents(formatAppointments(appointments)); // Format as needed for FullCalendar
         } catch (error) {
             console.error('Error fetching events for date range:', error);
@@ -1493,4 +1493,4 @@ function AppointmentScheduler() {
     );
 }
 
-export default AppointmentScheduler;
+export default AppointmentSchedulerPrimeCare;

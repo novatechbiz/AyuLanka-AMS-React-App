@@ -1,7 +1,8 @@
 .login {
   background-color: var(--background-color);
   color: var(--text-color);
-  padding: 5% 2%; /* Increase top padding for better alignment */
+  padding: 5% 2%;
+  /* Increase top padding for better alignment */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -16,48 +17,65 @@ button.btn-primary {
   font-size: 16px;
   border: none;
   border-radius: 4px;
-  background-color: #28a745; /* Green color */
+  background-color: #28a745;
+  /* Green color */
   color: white;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  width: 100%; /* Ensure button takes full width */
+  width: 100%;
+  /* Ensure button takes full width */
 }
 
 button:hover,
 button.btn-primary:hover {
-  background-color: #218838; /* Darker green on hover */
+  background-color: #218838;
+  /* Darker green on hover */
 }
 
 .form-group {
-  width: 100%; /* Make form inputs full width */
-  margin-bottom: 1rem; /* Add margin between form inputs */
+  width: 100%;
+  /* Make form inputs full width */
+  margin-bottom: 1rem;
+  /* Add margin between form inputs */
 }
 
 .form-control {
-  width: 100%; /* Ensure inputs take full width */
-  padding: 10px; /* Add padding for better appearance */
-  border-color: grey; /* Input border grey */
+  width: 100%;
+  /* Ensure inputs take full width */
+  padding: 10px;
+  /* Add padding for better appearance */
+  border-color: grey;
+  /* Input border grey */
 }
 
 .form-control:focus {
-  border-color: darkgrey; /* Input focus border dark grey */
-  box-shadow: none; /* Remove default focus shadow */
+  border-color: darkgrey;
+  /* Input focus border dark grey */
+  box-shadow: none;
+  /* Remove default focus shadow */
 }
 
 .btn-primary {
-  width: 100%; /* Make button full width */
-  background-color: green; /* Button background green */
-  border-color: green; /* Button border green */
-  padding: 10px; /* Add padding for better appearance */
+  width: 100%;
+  /* Make button full width */
+  background-color: green;
+  /* Button background green */
+  border-color: green;
+  /* Button border green */
+  padding: 10px;
+  /* Add padding for better appearance */
 }
 
 .btn-primary:hover {
-  background-color: darkgreen; /* Button hover background dark green */
-  border-color: darkgreen; /* Button hover border dark green */
+  background-color: darkgreen;
+  /* Button hover background dark green */
+  border-color: darkgreen;
+  /* Button hover border dark green */
 }
 
 .container-wrapper-login .btn-primary {
-  width: 100%; /* Ensure button takes full width */
+  width: 100%;
+  /* Ensure button takes full width */
 }
 
 .welcome-image {
@@ -99,7 +117,8 @@ button.btn-primary:hover {
 .container-wrapper-login {
   margin: 2% 0;
   display: flex;
-  background-color: #707070; /* Updated to grey-like color */
+  background-color: #707070;
+  /* Updated to grey-like color */
 }
 
 @media screen and (min-width: 576px) {
@@ -115,6 +134,7 @@ button.btn-primary:hover {
     padding: 0% 5% 5% 2%;
     min-height: 75vh;
   }
+
   .container-wrapper-login {
     margin: 0;
     align-items: center;

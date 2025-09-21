@@ -36,9 +36,30 @@ export const fetchTreatmentTypes = async () => {
 };
 
 // Fetch treatment locations from the server
-export const fetchTreatmentLocations = async () => {
+export const fetchAllLocations = async () => {
   try {
     const response = await api.get("/location");
+    return response.data;  // Assuming the response data contains the array of shifts
+  } catch (error) {
+    console.error("Error fetching treatment locations:", error);
+    throw error;
+  }
+};
+
+export const fetchEliteCareTreatmentLocations = async () => {
+  try {
+    const response = await api.get("/location/elitecare");
+    return response.data;  // Assuming the response data contains the array of shifts
+  } catch (error) {
+    console.error("Error fetching treatment locations:", error);
+    throw error;
+  }
+};
+
+// Fetch treatment locations from the server
+export const fetchPrimeCareTreatmentLocations = async () => {
+  try {
+    const response = await api.get("/location/primecare");
     return response.data;  // Assuming the response data contains the array of shifts
   } catch (error) {
     console.error("Error fetching treatment locations:", error);
@@ -150,6 +171,16 @@ export const fetchAppoitmentByDate = async (date) => {
   }
 };
 
+export const fetchPrimeCareAppoitmentByDate = async (date) => {
+  try {
+    const response = await api.get(`/AppointmentSchedule/ByDate/${date}`);
+    return response.data;  // Assuming the API returns an array of appointments
+  } catch (error) {
+    console.error("Error fetching day offs:", error);
+    throw error;
+  }
+};
+
 export const fetchDeletedAppoitmentByDate = async (startDate, endDate) => {
   console.log(startDate, ' ', endDate)
 
@@ -187,6 +218,56 @@ export const fetchAppointmentsByDateRange = async (startDate, endDate) => {
     return response.data;
   } catch (error) {
     console.error("Error fetching appointmentschedule:", error);
+    throw error;
+  }
+};
+
+export const fetchPrimeCareAppointmentsByDateRange = async (startDate, endDate) => {
+  console.log(startDate, ' ', endDate)
+
+  // Ensure startDate and endDate are valid Date objects
+  const start = typeof startDate === "string" ? new Date(startDate) : startDate;
+  const end = typeof endDate === "string" ? new Date(endDate) : endDate;
+
+  try {
+    const response = await axios.get(`${API_BASE_URL}/appointmentschedule/primecarebydaterange`, {
+      params: {
+        startDate: start.toISOString().substring(0, 10), // Format as YYYY-MM-DD
+        endDate: end.toISOString().substring(0, 10)      // Format as YYYY-MM-DD
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching appointmentschedule:", error);
+    throw error;
+  }
+};
+
+export const fetchTokensByDate = async (scheduledDate) => {
+  console.log(scheduledDate)
+
+  // Ensure startDate and endDate are valid Date objects
+  const scDate = typeof scheduledDate === "string" ? new Date(scheduledDate) : scheduledDate;
+
+  try {
+    const response = await axios.get(`${API_BASE_URL}/appointmentschedule/tokensbydate`, {
+      params: {
+        date: scDate.toISOString().substring(0, 10),
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching appointmentschedule:", error);
+    throw error;
+  }
+};
+
+export const fetchIssuedTokens = async () => {
+  try {
+    const response = await api.get(`/appointmentschedule/issuedtokens`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching treatment types:", error);
     throw error;
   }
 };
