@@ -131,9 +131,9 @@ const Sidebar = () => {
               <li>
                 <Link to="/token-generate">Token Generate</Link>
               </li>
-              <li>
+              {/* <li>
                 <Link to="/token-dashboard">Appointment Dashboard</Link>
-              </li>
+              </li> */}
               <li>
                 <Link to="/appoinment-schedular-elitecare">Appointment Scheduler - Elite Care</Link>
               </li>
