@@ -250,6 +250,10 @@ function TokenGenerate() {
             setEndTime(endTime)
             setSelectedEventId(existing.id)
             setLocationType(existing.mainTreatmentArea)
+
+            if(existing.mainTreatmentArea == "2") {
+                setSelectedEliteAppointment(appointmentData);
+            }
         } else {
             // If token is free, populate only tokenNo and date
             setAppointmentData(prevState => ({
@@ -581,9 +585,6 @@ function TokenGenerate() {
         console.log("appointment dataaaaaaaa:", appointmentData);
         console.log("locationTypeeeeeeeeeee", locationType);
 
-        if(locationType == "2") {
-            setSelectedEliteAppointment(appointmentData);
-        }
     }, [appointmentData, locationType]);
 
     return (

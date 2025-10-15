@@ -222,19 +222,24 @@ export const fetchAppointmentsByDateRange = async (startDate, endDate) => {
   }
 };
 
+const formatDate = (date) => {
+  const d = new Date(date);
+  const month = `${d.getMonth() + 1}`.padStart(2, "0");
+  const day = `${d.getDate()}`.padStart(2, "0");
+  const year = d.getFullYear();
+  return `${year}-${month}-${day}`;
+};
+
 export const fetchPrimeCareAppointmentsByDateRange = async (startDate, endDate) => {
   console.log(startDate, ' ', endDate)
 
   // Ensure startDate and endDate are valid Date objects
-  const start = typeof startDate === "string" ? new Date(startDate) : startDate;
-  const end = typeof endDate === "string" ? new Date(endDate) : endDate;
+  const start = formatDate(startDate);
+  const end = formatDate(endDate);
 
   try {
     const response = await axios.get(`${API_BASE_URL}/appointmentschedule/primecarebydaterange`, {
-      params: {
-        startDate: start.toISOString().substring(0, 10), // Format as YYYY-MM-DD
-        endDate: end.toISOString().substring(0, 10)      // Format as YYYY-MM-DD
-      }
+      params: { startDate: start, endDate: end }
     });
     return response.data;
   } catch (error) {

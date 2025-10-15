@@ -104,6 +104,7 @@ function AppointmentSchedulerPrimeCare() {
     }, []);
 
     const handleDatesSet = async (dateInfo) => {
+        console.log('dateInfo', dateInfo)
         const { startStr, endStr } = dateInfo;
         try {
             const appointments = await fetchPrimeCareAppointmentsByDateRange(startStr, endStr);
@@ -807,7 +808,7 @@ function AppointmentSchedulerPrimeCare() {
                 ActualToTimeSecond: appointmentDetails.actualToTimeSecond,
                 EnteredBy: userId,
                 EnteredDate: moment().toISOString(),
-                TokenNo: appointmentDetails.tokenNo,
+                TokenNo: appointmentData.tokenNo == "" ? null : appointmentData.tokenNo,
                 Remarks: appointmentDetails.remarks,
                 LocationId: event._def.resourceIds[0],
                 AppoinmentTreatments: treatmentModels
@@ -1309,7 +1310,7 @@ function AppointmentSchedulerPrimeCare() {
                                 <div className='row'>
                                     <div className="col-md-6 col-sm-6 form-group">
                                         <label htmlFor="scheduleDate">Schedule Date <span className="text-danger">*</span></label><br />
-                                        <DatePicker className={`form-control ${formErrors.scheduleDate ? 'is-invalid' : ''}`} selected={appointmentData.scheduleDate} onChange={(date) => handleDateChange('scheduleDate', date)} dateFormat="MMMM d, yyyy" />
+                                        <DatePicker disabled={appointmentData.tokenNo != null} className={`form-control ${formErrors.scheduleDate ? 'is-invalid' : ''}`} selected={appointmentData.scheduleDate} onChange={(date) => handleDateChange('scheduleDate', date)} dateFormat="MMMM d, yyyy" />
                                     </div>
                                     <div className="col-md-3 col-sm-3 form-group">
                                         <label htmlFor="startTime">Start Time <span className="text-danger">*</span></label><br />
