@@ -72,6 +72,7 @@ function TokenGenerate() {
     const [locationType, setLocationType] = useState("1");
     const [eliteAppointments, setEliteAppointments] = useState([]);
     const [selectedEliteAppointment, setSelectedEliteAppointment] = useState(null);
+    const [selectedTokenNo, setSelectedTokenNo] = useState(null);
 
     // Read values from env
     const rows = Number(process.env.REACT_APP_TOTAL_ROWS) || 15;
@@ -205,10 +206,14 @@ function TokenGenerate() {
 
 
     const handleTokenClick = (tokenNumber) => {
+        setSelectedTokenNo(tokenNumber);
         // Check if this token is already booked
         const existing = bookedTokens.find(
             (a) => parseInt(a.tokenNo, 10) === tokenNumber
         );
+
+        
+        console.log('existinggggggggggg', existing)
 
         if (existing) {
             let startTime = null;
@@ -234,6 +239,7 @@ function TokenGenerate() {
                 customerName: existing.customerName || '',
                 contactNo: existing.contactNo || '',
                 tokenNo: tokenNumber,
+                chitNo: existing.chitNo,
                 startTime: startTime,
                 endTime: endTime,
                 locationId: existing.locationId,
@@ -573,11 +579,12 @@ function TokenGenerate() {
 
     useEffect(() => {
         console.log("appointment dataaaaaaaa:", appointmentData);
-    }, [appointmentData]);
-
-    useEffect(() => {
         console.log("locationTypeeeeeeeeeee", locationType);
-    }, [locationType]);
+
+        if(locationType == "2") {
+            setSelectedEliteAppointment(appointmentData);
+        }
+    }, [appointmentData, locationType]);
 
     return (
         <div className="container">
@@ -693,7 +700,6 @@ function TokenGenerate() {
                                                         scheduleDate: new Date(appt.scheduleDate),
                                                         startTime: startTime,
                                                         endTime: endTime,
-                                                        tokenNo: appt.tokenNo,
                                                         locationId: appt.locationId,
                                                         // extract treatment IDs
                                                         treatmentTypeId: appt.appointmentTreatments
@@ -807,13 +813,17 @@ function TokenGenerate() {
                                         </div>
                                     </div>
                                     <div className="custom-modal-footer row">
-                                        <div className="col-4 p-2">&nbsp;</div>
+                                        <div className="col-4 p-2">
+                                            { appointmentData.chitNo != null && (
+                                                <label style={{fontSize: '18px', fontWeight: 'bold', color: 'red'}}>Chit No: {appointmentData.chitNo}</label>
+                                            )}
+                                        </div>
                                         <div className="col-4 p-2">&nbsp;</div>
                                         <div className="col-4 p-2">
                                             <button
                                                 onClick={(e) => handleSubmit(e, true)}
                                                 className="btn btn-warning w-100"
-                                                disabled={!appointmentData.id}
+                                                disabled={!appointmentData.id || appointmentData.chitNo != null}
                                             >
                                                 Issue Token
                                             </button>

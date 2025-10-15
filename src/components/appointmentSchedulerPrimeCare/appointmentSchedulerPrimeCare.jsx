@@ -1418,7 +1418,7 @@ function AppointmentSchedulerPrimeCare() {
                                     </div>
                                     <div className="col-md-6 form-group">
                                         <label htmlFor="tokenNo">Token Number</label>
-                                        <input className="form-control" type="text" id="tokenNo" name="tokenNo" value={appointmentData.tokenNo} onChange={handleInputChange} />
+                                        <input className="form-control" type="text" id="tokenNo" name="tokenNo" value={appointmentData.tokenNo} onChange={handleInputChange} disabled />
                                     </div>
 
                                 </div>
