@@ -529,7 +529,7 @@ function AppointmentSchedulerPrimeCare() {
             ActualToTimeSecond: actualSecondEndTime,
             EnteredBy: userId,
             EnteredDate: new Date().toISOString(),
-            TokenNo: appointmentData.tokenNo,
+            TokenNo: appointmentData.tokenNo == "" ? null : appointmentData.tokenNo,
             Remarks: appointmentData.remarks,
             LocationId: appointmentData.resourceId,
             appoinmentTreatments: treatmentModels
