@@ -256,14 +256,14 @@ button.cancel-button {
     transform: scale(1.05);
 }
 
-/* Ensure the calendar cells have proper height */
 .fc-timegrid-slot {
-    height: 30px !important;
-    /* Adjust based on your needs */
+    /* Remove !important and let FullCalendar control the height */
+    height: auto;
 }
 
 .fc-timegrid-event-harness {
-    height: 30px !important;
+    /* Remove fixed height for event containers */
+    height: auto;
 }
 
 /* Responsive Styles */
