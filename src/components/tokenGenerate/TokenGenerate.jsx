@@ -798,7 +798,7 @@ function TokenGenerate() {
                                             <button
                                                 onClick={closeModal}
                                                 className="btn btn-danger w-100"
-                                                disabled={!appointmentData.id}
+                                                disabled={!appointmentData.id || appointmentData.chitNo != null}
                                             >
                                                 Delete
                                             </button>
