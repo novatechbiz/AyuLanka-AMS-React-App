@@ -560,7 +560,7 @@ function TokenGenerate() {
         try {
             console.log('appointment dataaaaaaaaa', appointmentData);
             const userId = sessionStorage.getItem('userId');
-            await deleteAppointment(selectedEventId, userId, appointmentData.remarks);
+            await deleteAppointment(selectedEventId, userId, appointmentData.remarks != "" ? appointmentData.remarks : "delete token");
             const updatedEvents = currentEvents.filter(event => event.id !== selectedEventId);
             setCurrentEvents(updatedEvents);
             setSelectedEventId(null);
