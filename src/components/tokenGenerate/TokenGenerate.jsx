@@ -15,6 +15,7 @@ import AppointmentModalComponent from '../appointmentModalComponent/appointmentM
 import moment from 'moment';
 import { Autocomplete, TextField } from '@mui/material';
 import { ConfirmationModalForValidation } from '../confirmationModalForValidation/confirmationModalForValidation.jsx';
+import { CheckBox } from '@mui/icons-material';
 
 Modal.setAppElement('#root');
 
@@ -81,7 +82,8 @@ function TokenGenerate() {
         locationType: "1",
         treatmentTypeId: [],
         scheduleDate: new Date(),
-        startTime: null
+        startTime: null,
+        isNeededToFollowUp: false,
     });
 
 
@@ -188,7 +190,7 @@ function TokenGenerate() {
 
                             let btnClass = "btn-warning"; // default for free
                             if (booked) {
-                                btnClass = booked.chitNo ? "btn-danger" : "btn-success";
+                                btnClass = booked.chitNo ? "btn-success" : booked.isNeededToFollowUp == true ? "btn-danger" : "btn-info";
                             }
 
                             return (
@@ -264,6 +266,7 @@ function TokenGenerate() {
                 treatmentTypeId: existing.appointmentTreatments?.map(t => t.treatmentTypeId) || [],
                 remarks: existing.remarks,
                 appoinmentTreatments: existing.appointmentTreatments || [],
+                childAppointments: existing.childAppointments || []
             });
             setStartTime(startTime)
             setEndTime(endTime)
@@ -531,6 +534,29 @@ function TokenGenerate() {
     };
 
     const handleNextAppointmentSubmit = async () => {
+        const {
+            tokenNo,
+            scheduleDate,
+            startTime,
+            treatmentTypeId,
+            locationType,
+            customerName,
+            contactNo
+          } = nextAppointmentData;
+        
+          if (
+            !tokenNo ||
+            !scheduleDate ||
+            !startTime ||
+            !treatmentTypeId.length ||
+            !locationType ||
+            !customerName ||
+            !contactNo
+          ) {
+            alert("Please fill all required fields.");
+            return;
+          }
+          
         const userId = sessionStorage.getItem('userId');
     
         const treatmentModels = nextAppointmentData.treatmentTypeId.map(treatmentTypeId => ({
@@ -563,12 +589,13 @@ function TokenGenerate() {
             ToTime: formatTimeForCSharp(nextAppointmentData.startTime),
             EnteredBy: userId,
             EnteredDate: new Date().toISOString(),
-            TokenNo: null,
+            TokenNo: nextAppointmentData.tokenNo,
             LocationId: null,
             IsTokenIssued: false,
             MainTreatmentArea: nextAppointmentData.locationType,
             appoinmentTreatments: treatmentModels,
-            ParentAppointmentScheduleId: appointmentData.id // link to current appointment
+            ParentAppointmentScheduleId: appointmentData.id, // link to current appointment
+            IsNeededToFollowUp: nextAppointmentData.isNeededToFollowUp
         };
     
         try {
@@ -828,6 +855,7 @@ function TokenGenerate() {
                                                             ? appt.appointmentTreatments.map(t => t.treatmentTypeId)
                                                             : [],
                                                         appoinmentTreatments: appt.appointmentTreatments || [],
+                                                        childAppointments: appt.childAppointments || []
                                                     });
                                                     setStartTime(startTime)
                                                     setEndTime(endTime)
@@ -956,6 +984,7 @@ function TokenGenerate() {
                                             <button
                                                 type="button"
                                                 className="btn btn-info w-100"
+                                                disabled={appointmentData.chitNo == null || appointmentData.childAppointments.length != 0}
                                                 onClick={() => openNextAppointmentModal()}
                                             >
                                                 Create Next Appointment
@@ -978,15 +1007,35 @@ function TokenGenerate() {
             >
                 <div className="modal-dialog modal-lg">
                     <div className="modal-content custom-modal-content">
-                        <div className="modal-header custom-modal-header">
-                            <h5 className="modal-title custom-modal-title">Create Next Appointment</h5>
-                            <button
-                                type="button"
-                                className="close custom-close"
-                                onClick={() => setIsNextAppointmentModalOpen(false)}
-                            >
-                                <span>&times;</span>
-                            </button>
+                        <div className="modal-header custom-modal-header row">
+                            <div className='col-md-8'>
+                                <h5 className="modal-title custom-modal-title">Create Next Appointment</h5>
+                            </div>
+                            <div className="col-2">
+                                <input className="form-control"
+                                    type="text"
+                                    id="tokenNo"
+                                    name="tokenNo"
+                                    style={{ textAlign: 'center', fontSize: '20px', fontWeight: 'bold', backgroundColor: '#ffc107' }}
+                                    value={nextAppointmentData.tokenNo}
+                                    onChange={(e) =>
+                                        setNextAppointmentData({
+                                            ...nextAppointmentData,
+                                            tokenNo: e.target.value
+                                        })
+                                    }
+                                    required
+                                />
+                            </div>
+                            <div className='col-md-2'>
+                                <button
+                                    type="button"
+                                    className="close custom-close"
+                                    onClick={() => setIsNextAppointmentModalOpen(false)}
+                                >
+                                    <span>&times;</span>
+                                </button>
+                            </div>
                         </div>
 
                         <div className="modal-body custom-modal-body">
@@ -1050,13 +1099,14 @@ function TokenGenerate() {
                                         renderInput={(params) => (
                                             <TextField {...params} variant="outlined" />
                                         )}
+                                        required
                                     />
                                 </div>
                             </div>
 
                             <div className="row">
                                 <div className="col-md-6 form-group">
-                                    <label>Schedule Date</label>
+                                    <label>Schedule Date</label>&nbsp;&nbsp;&nbsp;
                                     <DatePicker
                                         selected={nextAppointmentData.scheduleDate}
                                         onChange={(date) =>
@@ -1071,7 +1121,7 @@ function TokenGenerate() {
                                 </div>
 
                                 <div className="col-md-6 form-group">
-                                    <label>Start Time</label>
+                                    <label>Start Time</label>&nbsp;&nbsp;&nbsp;
                                     <DatePicker
                                         selected={nextAppointmentData.startTime}
                                         onChange={(date) =>
@@ -1086,26 +1136,51 @@ function TokenGenerate() {
                                         timeCaption="Time"
                                         dateFormat="h:mm aa"
                                         className="form-control"
+                                        required
                                     />
                                 </div>
-                            </div>
+                            </div><br/>
+                            <div className="row">
+                                <div className="col-md-3 form-group">
+                                    <label className="form-check-label" htmlFor="followUpNeed" style={{color:'red'}}>
+                                        Follow Up Need
+                                    </label>
+                                </div>
+                                <div className="col-md-6 form-group form-check form-switch">
+                                    <input
+                                        className="form-check-input"
+                                        type="checkbox"
+                                        id="followUpNeed"
+                                        checked={nextAppointmentData.isNeededToFollowUp}
+                                        onChange={(e) =>
+                                        setNextAppointmentData({
+                                            ...nextAppointmentData,
+                                            isNeededToFollowUp: e.target.checked
+                                        })
+                                        }
+                                    />
+                                </div>
+                            </div><br/>
                         </div>
-
-                        <div className="modal-footer custom-modal-footer">
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
-                                onClick={() => setIsNextAppointmentModalOpen(false)}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-success"
-                                onClick={handleNextAppointmentSubmit}
-                            >
-                                Create Next Appointment
-                            </button>
+                        <div className="modal-footer custom-modal-footer row">
+                            <div className="col-md-6">
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    onClick={() => setIsNextAppointmentModalOpen(false)}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                            <div className="col-md-6">
+                                <button
+                                    type="button"
+                                    className="btn btn-success"
+                                    onClick={handleNextAppointmentSubmit}
+                                >
+                                    Create Next Appointment
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
