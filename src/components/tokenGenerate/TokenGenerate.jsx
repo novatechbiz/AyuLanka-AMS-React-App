@@ -74,6 +74,17 @@ function TokenGenerate() {
     const [selectedEliteAppointment, setSelectedEliteAppointment] = useState(null);
     const [selectedTokenNo, setSelectedTokenNo] = useState(null);
 
+    const [isNextAppointmentModalOpen, setIsNextAppointmentModalOpen] = useState(false);
+    const [nextAppointmentData, setNextAppointmentData] = useState({
+        customerName: "",
+        contactNo: "",
+        locationType: "1",
+        treatmentTypeId: [],
+        scheduleDate: new Date(),
+        startTime: null
+    });
+
+
     // Read values from env
     const rows = Number(process.env.REACT_APP_TOTAL_ROWS) || 15;
     const cols = Number(process.env.REACT_APP_TOKENS_PER_ROW) || 10;
@@ -415,7 +426,7 @@ function TokenGenerate() {
     }
 
 
-    const handleSubmit = async (event, isTokenIssue = false) => {
+    const handleSubmit = async (event, isTokenIssue = false, isMainLocationChanged = false) => {
         console.log('handleSubmit appointmentData', appointmentData)
         setIsClickedHandleSubmit(true)
         if (event) event.preventDefault();
@@ -452,6 +463,19 @@ function TokenGenerate() {
             return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getDate().toString().padStart(2, "0")}`;
         };
 
+        let changedLocation = locationType;
+        if(isMainLocationChanged) {
+            if(locationType == 1) {
+                changedLocation = 2;
+                setAppointmentData(prevState => ({
+                    ...prevState,
+                    locationId: null
+                }));
+            } else {
+                changedLocation = 1;
+            }
+        }
+
         const appointmentDataToSend = {
             Id: appointmentData.id != 0 ? appointmentData.id : 0,
             ScheduleDate: formatDateOnly(appointmentData.scheduleDate),
@@ -472,8 +496,8 @@ function TokenGenerate() {
             TokenNo: appointmentData.tokenNo,
             LocationId: appointmentData.locationId != "" ? appointmentData.locationId : null,
             IsTokenIssued: isTokenIssue ? true : false,
-            MainTreatmentArea: locationType,
-            appoinmentTreatments: treatmentModels
+            MainTreatmentArea: changedLocation,
+            appoinmentTreatments: treatmentModels,
         };
 
         console.log('appointmentDataToSend', appointmentDataToSend);
@@ -505,6 +529,60 @@ function TokenGenerate() {
         setSelectedResource({});
         // }
     };
+
+    const handleNextAppointmentSubmit = async () => {
+        const userId = sessionStorage.getItem('userId');
+    
+        const treatmentModels = nextAppointmentData.treatmentTypeId.map(treatmentTypeId => ({
+            Id: 0,
+            AppoinmentId: null,
+            TreatmentTypeId: parseInt(treatmentTypeId, 10)
+        }));
+    
+        const formatDateOnly = (date) => {
+            const d = (date instanceof Date) ? date : new Date(date);
+            return `${d.getFullYear()}-${(d.getMonth() + 1)
+                .toString()
+                .padStart(2, "0")}-${d.getDate().toString().padStart(2, "0")}`;
+        };
+
+        const appointmentDataToSend = {
+            Id: 0,
+            ScheduleDate: formatDateOnly(nextAppointmentData.scheduleDate),
+            CustomerName: nextAppointmentData.customerName,
+            ContactNo: nextAppointmentData.contactNo,
+            EmployeeId: appointmentData.employeeId != "" ? appointmentData.employeeId : null,
+            SecondaryEmployeeId: appointmentData.secondaryEmployeeId != "" ? appointmentData.secondaryEmployeeId : null,
+            DoctorEmployeeId: appointmentData.doctorEmployeeId != "" ? appointmentData.doctorEmployeeId : null,
+            ActualFromTime: appointmentData.actualStartTime != "" ? appointmentData.actualStartTime : null,
+            ActualToTime: appointmentData.actualEndTime != "" ? appointmentData.actualEndTime : null,
+            ActualFromTimeSecond: appointmentData.actualSecondStartTime != "" ? appointmentData.actualSecondStartTime : null,
+            ActualToTimeSecond: appointmentData.actualSecondEndTime != "" ? appointmentData.actualSecondEndTime : null,
+            Remarks: appointmentData.remarks,
+            FromTime: formatTimeForCSharp(nextAppointmentData.startTime),
+            ToTime: formatTimeForCSharp(nextAppointmentData.startTime),
+            EnteredBy: userId,
+            EnteredDate: new Date().toISOString(),
+            TokenNo: null,
+            LocationId: null,
+            IsTokenIssued: false,
+            MainTreatmentArea: nextAppointmentData.locationType,
+            appoinmentTreatments: treatmentModels,
+            ParentAppointmentScheduleId: appointmentData.id // link to current appointment
+        };
+    
+        try {
+            await addAppointment(appointmentDataToSend);
+            setModalContent({ type: 'success', message: 'Next appointment created successfully!' });
+            setShowModal(true);
+            setIsNextAppointmentModalOpen(false);
+            refreshAppointments();
+        } catch (error) {
+            console.error('Failed to create next appointment:', error);
+            setModalContent({ type: 'error', message: 'Failed to create next appointment' });
+            setShowModal(true);
+        }
+    };    
 
 
     const refreshAppointments = async () => {
@@ -603,6 +681,16 @@ function TokenGenerate() {
 
     }, [appointmentData, locationType]);
 
+    const openNextAppointmentModal = () => {
+        setNextAppointmentData({
+            ...nextAppointmentData,
+            customerName: appointmentData.customerName,
+            contactNo: appointmentData.contactNo
+        });
+        setIsNextAppointmentModalOpen(true);
+    };
+    
+
     return (
         <div className="container">
             <h2 className="token-header">
@@ -680,6 +768,16 @@ function TokenGenerate() {
                                     <option value="1">Prime Care</option>
                                     <option value="2">Elite Care</option>
                                 </select>
+                            </div>
+                            <div className="col-md-3 form-group">
+                            <label>&nbsp;</label>
+                                <button
+                                    onClick={(e) => handleSubmit(e, false, true)}
+                                    className="btn btn-secondary w-100"
+                                    disabled={appointmentData.chitNo == null}
+                                >
+                                    Change Location
+                                </button>
                             </div>
                         </div>
                         {locationType == "2" && !appointmentData.id && (
@@ -829,7 +927,7 @@ function TokenGenerate() {
 
                                         <div className="col-6 p-2">
                                             <button
-                                                onClick={(e) => handleSubmit(e, false)}
+                                                onClick={(e) => handleSubmit(e, false, false)}
                                                 className="btn btn-success w-100"
                                             >
                                                 {!appointmentData.id ? "Create" : "Update"}
@@ -845,11 +943,22 @@ function TokenGenerate() {
                                         <div className="col-4 p-2">&nbsp;</div>
                                         <div className="col-4 p-2">
                                             <button
-                                                onClick={(e) => handleSubmit(e, true)}
-                                                className="btn btn-warning w-100"
+                                                onClick={(e) => handleSubmit(e, true, false)}
+                                                className="btn btn-secondary w-100"
                                                 disabled={!appointmentData.id || appointmentData.chitNo != null}
                                             >
                                                 Issue Token
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="custom-modal-footer row">
+                                        <div className="col-12 p-2">
+                                            <button
+                                                type="button"
+                                                className="btn btn-info w-100"
+                                                onClick={() => openNextAppointmentModal()}
+                                            >
+                                                Create Next Appointment
                                             </button>
                                         </div>
                                     </div>
@@ -859,6 +968,150 @@ function TokenGenerate() {
                     </div>
                 </div>
             </Modal >
+
+            <Modal
+                isOpen={isNextAppointmentModalOpen}
+                onRequestClose={() => setIsNextAppointmentModalOpen(false)}
+                className="Modal custom-modal"
+                overlayClassName="Overlay"
+                contentLabel="Create Next Appointment"
+            >
+                <div className="modal-dialog modal-lg">
+                    <div className="modal-content custom-modal-content">
+                        <div className="modal-header custom-modal-header">
+                            <h5 className="modal-title custom-modal-title">Create Next Appointment</h5>
+                            <button
+                                type="button"
+                                className="close custom-close"
+                                onClick={() => setIsNextAppointmentModalOpen(false)}
+                            >
+                                <span>&times;</span>
+                            </button>
+                        </div>
+
+                        <div className="modal-body custom-modal-body">
+                            <div className="row">
+                                <div className="col-md-6 form-group">
+                                    <label>Customer Name</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        value={nextAppointmentData.customerName}
+                                        readOnly
+                                    />
+                                </div>
+                                <div className="col-md-6 form-group">
+                                    <label>Contact Number</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        value={nextAppointmentData.contactNo}
+                                        readOnly
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="row">
+                                <div className="col-md-6 form-group">
+                                    <label>Location Type</label>
+                                    <select
+                                        className="form-control"
+                                        value={nextAppointmentData.locationType}
+                                        onChange={(e) =>
+                                            setNextAppointmentData({
+                                                ...nextAppointmentData,
+                                                locationType: e.target.value
+                                            })
+                                        }
+                                    >
+                                        <option value="1">Prime Care</option>
+                                        <option value="2">Elite Care</option>
+                                    </select>
+                                </div>
+                                <div className="col-md-6 form-group">
+                                    <label>Treatment Type(s)</label>
+                                    <Autocomplete
+                                        multiple
+                                        options={treatmentTypes}
+                                        getOptionLabel={(option) =>
+                                            option.treatmentShortCode
+                                                ? `${option.name} - ${option.treatmentShortCode}`
+                                                : option.name
+                                        }
+                                        value={treatmentTypes.filter(type =>
+                                            nextAppointmentData.treatmentTypeId.includes(type.id)
+                                        )}
+                                        onChange={(event, value) =>
+                                            setNextAppointmentData({
+                                                ...nextAppointmentData,
+                                                treatmentTypeId: value.map(v => v.id)
+                                            })
+                                        }
+                                        renderInput={(params) => (
+                                            <TextField {...params} variant="outlined" />
+                                        )}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="row">
+                                <div className="col-md-6 form-group">
+                                    <label>Schedule Date</label>
+                                    <DatePicker
+                                        selected={nextAppointmentData.scheduleDate}
+                                        onChange={(date) =>
+                                            setNextAppointmentData({
+                                                ...nextAppointmentData,
+                                                scheduleDate: date
+                                            })
+                                        }
+                                        className="form-control"
+                                        dateFormat="MMMM d, yyyy"
+                                    />
+                                </div>
+
+                                <div className="col-md-6 form-group">
+                                    <label>Start Time</label>
+                                    <DatePicker
+                                        selected={nextAppointmentData.startTime}
+                                        onChange={(date) =>
+                                            setNextAppointmentData({
+                                                ...nextAppointmentData,
+                                                startTime: date
+                                            })
+                                        }
+                                        showTimeSelect
+                                        showTimeSelectOnly
+                                        timeIntervals={15}
+                                        timeCaption="Time"
+                                        dateFormat="h:mm aa"
+                                        className="form-control"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="modal-footer custom-modal-footer">
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={() => setIsNextAppointmentModalOpen(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-success"
+                                onClick={handleNextAppointmentSubmit}
+                            >
+                                Create Next Appointment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </Modal>
+
+
             <ConfirmationModal
                 isOpen={isConfirmModalOpen}
                 onClose={() => setIsConfirmModalOpen(false)}
