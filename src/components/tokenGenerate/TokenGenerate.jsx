@@ -539,7 +539,6 @@ function TokenGenerate() {
 
     const handleNextAppointmentSubmit = async () => {
         const {
-            tokenNo,
             scheduleDate,
             startTime,
             treatmentTypeId,
@@ -549,7 +548,6 @@ function TokenGenerate() {
           } = nextAppointmentData;
         
           if (
-            !tokenNo ||
             !scheduleDate ||
             !startTime ||
             !treatmentTypeId.length ||
@@ -581,14 +579,6 @@ function TokenGenerate() {
             ScheduleDate: formatDateOnly(nextAppointmentData.scheduleDate),
             CustomerName: nextAppointmentData.customerName,
             ContactNo: nextAppointmentData.contactNo,
-            EmployeeId: appointmentData.employeeId != "" ? appointmentData.employeeId : null,
-            SecondaryEmployeeId: appointmentData.secondaryEmployeeId != "" ? appointmentData.secondaryEmployeeId : null,
-            DoctorEmployeeId: appointmentData.doctorEmployeeId != "" ? appointmentData.doctorEmployeeId : null,
-            ActualFromTime: appointmentData.actualStartTime != "" ? appointmentData.actualStartTime : null,
-            ActualToTime: appointmentData.actualEndTime != "" ? appointmentData.actualEndTime : null,
-            ActualFromTimeSecond: appointmentData.actualSecondStartTime != "" ? appointmentData.actualSecondStartTime : null,
-            ActualToTimeSecond: appointmentData.actualSecondEndTime != "" ? appointmentData.actualSecondEndTime : null,
-            Remarks: appointmentData.remarks,
             FromTime: formatTimeForCSharp(nextAppointmentData.startTime),
             ToTime: formatTimeForCSharp(nextAppointmentData.startTime),
             EnteredBy: userId,
@@ -1028,7 +1018,6 @@ function TokenGenerate() {
                                             tokenNo: e.target.value
                                         })
                                     }
-                                    required
                                 />
                             </div>
                             <div className='col-md-2'>
