@@ -8,7 +8,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './TokenGenerate.css'; // Ensure this file contains your custom styles
-import { fetchAppointmentsByDateRange, fetchTokensByDate, deleteAppointment, fetchEmployees, fetchEmployeeSchedule, fetchPrimeCareTreatmentLocations, addAppointment, fetchAppointments, fetchTreatmentTypesByLocation, fetchAppointmentDetails, fetchLeaveData, fetchDayOffsData, fetchShiftsData } from '../../services/appointmentSchedulerApi.js';
+import { fetchAppointmentsByDateRange, fetchTokensByDate, deleteAppointment, fetchEmployees, fetchPrimeCareTreatmentLocations, fetchEliteCareTreatmentLocations, addAppointment, fetchTreatmentTypesByLocation } from '../../services/appointmentSchedulerApi.js';
 import { ConfirmationModal } from '../confirmationModal/confirmationModal.jsx';
 import { NotificationComponent } from '../notificationComponent/notificationComponent.jsx';
 import AppointmentModalComponent from '../appointmentModalComponent/appointmentModalComponent.jsx';
@@ -49,6 +49,7 @@ function TokenGenerate() {
     const [doctors, setDoctors] = useState([]);
     const [treatmentTypes, setTreatmentTypes] = useState([]);
     const [resources, setResources] = useState([]);
+    const [eliteCareTreatmentLocations, setEliteCareTreatmentLocations] = useState([]);
     const [selectedEventId, setSelectedEventId] = useState(null);
     const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [notification, setNotification] = useState({ message: '', type: '' });
@@ -80,6 +81,7 @@ function TokenGenerate() {
         customerName: "",
         contactNo: "",
         locationType: "1",
+        locationId: "",
         treatmentTypeId: [],
         scheduleDate: new Date(),
         startTime: null,
@@ -89,7 +91,7 @@ function TokenGenerate() {
 
     // Read values from env
     const rows = Number(process.env.REACT_APP_TOTAL_ROWS) || 15;
-    const cols = Number(process.env.REACT_APP_TOKENS_PER_ROW) || 10;
+    const cols = Number(process.env.REACT_APP_TOKENS_PER_ROW) || 6;
     const startHour = Number(process.env.REACT_APP_APPOINTMENT_START_HOUR) || 7; // 7 AM
     const totalTokens = rows * cols;
 
@@ -130,9 +132,10 @@ function TokenGenerate() {
         console.log('appointmentData scheduleDate', appointmentData)
         const loadData = async () => {
             try {
-                const [empData, treatmentLocationData, treatmentTypesbyLocations] = await Promise.all([
+                const [empData, treatmentLocationData, eliteCareTreatmentLocationData, treatmentTypesbyLocations] = await Promise.all([
                     fetchEmployees(),
                     fetchPrimeCareTreatmentLocations(),
+                    fetchEliteCareTreatmentLocations(),
                     fetchTreatmentTypesByLocation()
                 ]);
 
@@ -143,6 +146,7 @@ function TokenGenerate() {
                 setEmployees(filteredEmployees);
                 setDoctors(filteredDoctors);
                 setResources(treatmentLocationData);
+                setEliteCareTreatmentLocations(eliteCareTreatmentLocationData);
                 setTreatmentTypes(treatmentTypesbyLocations);
 
                 setAppointmentData(prevState => ({
@@ -188,9 +192,9 @@ function TokenGenerate() {
                             // Find booked token object for this number
                             const booked = bookedTokens.find(bt => parseInt(bt.tokenNo, 10) === current);
 
-                            let btnClass = "btn-warning"; // default for free
+                            let btnClass = "btn-secondary"; // default for free
                             if (booked) {
-                                btnClass = booked.chitNo ? "btn-success" : booked.isNeededToFollowUp == true ? "btn-danger" : "btn-info";
+                                btnClass = booked.chitNo ? "btn-success" : booked.isNeededToFollowUp == true ? "btn-danger" : "btn-warning";
                             }
 
                             return (
@@ -590,7 +594,7 @@ function TokenGenerate() {
             EnteredBy: userId,
             EnteredDate: new Date().toISOString(),
             TokenNo: nextAppointmentData.tokenNo,
-            LocationId: null,
+            LocationId: nextAppointmentData.locationId != "" ? nextAppointmentData.locationId : null,
             IsTokenIssued: false,
             MainTreatmentArea: nextAppointmentData.locationType,
             appoinmentTreatments: treatmentModels,
@@ -1077,6 +1081,28 @@ function TokenGenerate() {
                                         <option value="2">Elite Care</option>
                                     </select>
                                 </div>
+                                { nextAppointmentData.locationType == "2" && (
+                                    <div className="col-md-6 form-group">
+                                    <label>Treatment Location</label>
+                                    <select
+                                        className="form-control"
+                                        value={nextAppointmentData.locationId}
+                                        onChange={(e) =>
+                                            setNextAppointmentData({
+                                                ...nextAppointmentData,
+                                                locationId: e.target.value
+                                            })
+                                        }
+                                    >
+                                        <option value="">Select Treatment Location</option>
+                                        {eliteCareTreatmentLocations.map((location) => (
+                                        <option key={location.id} value={location.id}>
+                                            {location.name}
+                                        </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                )}
                                 <div className="col-md-6 form-group">
                                     <label>Treatment Type(s)</label>
                                     <Autocomplete
