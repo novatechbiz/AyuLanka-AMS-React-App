@@ -42,6 +42,7 @@ function TokenGenerate() {
         locationId: '',
         mainTreatmentArea: '',
         isTokenIssued: false,
+        isPatientContacted: false,
         treatmentTypeId: [], // Store selected treatment type IDs as an array
         appoinmentTreatments: [], // Initialize appoinmentTreatments as an empty array
     });
@@ -170,33 +171,37 @@ function TokenGenerate() {
     const renderTokens = () => {
         let tokenNumber = 1;
         const tokenLayout = [];
-
+    
         for (let r = 0; r < rows; r++) {
             const rowStartHour = startHour + r;
             const rowEndHour = rowStartHour + 1;
             const timeRange = `${rowStartHour.toString().padStart(2, "0")}:00 - ${rowEndHour.toString().padStart(2, "0")}:00`;
-
+    
             tokenLayout.push(
                 <div className="d-flex align-items-center mb-2" key={r}>
                     {/* Time Label */}
                     <div className="me-3 text-center" style={{ width: "100px" }}>
                         <strong>{timeRange}</strong>
                     </div>
-
+    
                     {/* Tokens */}
                     <div className="d-flex flex-wrap flex-grow-1">
                         {Array.from({ length: cols }, (_, c) => {
                             if (tokenNumber > totalTokens) return null;
                             const current = tokenNumber++;
-
+    
                             // Find booked token object for this number
                             const booked = bookedTokens.find(bt => parseInt(bt.tokenNo, 10) === current);
-
+    
                             let btnClass = "btn-secondary"; // default for free
                             if (booked) {
-                                btnClass = booked.chitNo ? "btn-success" : booked.isNeededToFollowUp == true ? "btn-danger" : "btn-warning";
+                                btnClass = booked.chitNo
+                                    ? "btn-success"
+                                    : booked.isNeededToFollowUp == true
+                                    ? "btn-danger"
+                                    : "btn-warning";
                             }
-
+    
                             return (
                                 <div
                                     key={current}
@@ -205,10 +210,53 @@ function TokenGenerate() {
                                 >
                                     <button
                                         className={`btn p-1 ${btnClass}`}
-                                        style={{ width: '80px', height: '80px' }}
+                                        style={{
+                                            width: "80px",
+                                            height: "80px",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            justifyContent: "center",
+                                            alignItems: "center",
+                                            fontWeight: "bold",
+                                            position: "relative",
+                                        }}
                                         onClick={() => handleTokenClick(current)}
                                     >
-                                        {current}
+                                        {/* Token number */}
+                                        <span style={{ fontSize: "20px" }}>{current}</span>
+    
+                                        {/* Chit number */}
+                                        {booked?.chitNo && (
+                                            <span
+                                                style={{
+                                                    fontSize: "12px",
+                                                    fontWeight: "normal",
+                                                    color: "#fff",
+                                                    backgroundColor: "rgba(0,0,0,0.3)",
+                                                    borderRadius: "4px",
+                                                    padding: "2px 6px",
+                                                    marginTop: "4px",
+                                                }}
+                                            >
+                                                Chit: {booked.chitNo}
+                                            </span>
+                                        )}
+    
+                                        {/* ⭐ Star icon if contacted */}
+                                        {booked?.isPatientContacted && (
+                                            <span
+                                                style={{
+                                                    position: "absolute",
+                                                    top: "5px",
+                                                    right: "6px",
+                                                    color: "gold",
+                                                    fontSize: "18px",
+                                                }}
+                                                title="Patient Contacted"
+                                            >
+                                                ★
+                                            </span>
+                                        )}
                                     </button>
                                 </div>
                             );
@@ -217,10 +265,10 @@ function TokenGenerate() {
                 </div>
             );
         }
-
+    
         return tokenLayout;
     };
-
+    
 
     const handleTokenClick = (tokenNumber) => {
         setSelectedTokenNo(tokenNumber);
@@ -270,7 +318,9 @@ function TokenGenerate() {
                 treatmentTypeId: existing.appointmentTreatments?.map(t => t.treatmentTypeId) || [],
                 remarks: existing.remarks,
                 appoinmentTreatments: existing.appointmentTreatments || [],
-                childAppointments: existing.childAppointments || []
+                childAppointments: existing.childAppointments || [],
+                IsNeededToFollowUp: existing.isNeededToFollowUp,
+                isPatientContacted: existing.isPatientContacted
             });
             setStartTime(startTime)
             setEndTime(endTime)
@@ -505,6 +555,7 @@ function TokenGenerate() {
             IsTokenIssued: isTokenIssue ? true : false,
             MainTreatmentArea: changedLocation,
             appoinmentTreatments: treatmentModels,
+            isPatientContacted: appointmentData.isPatientContacted
         };
 
         console.log('appointmentDataToSend', appointmentDataToSend);
@@ -625,6 +676,7 @@ function TokenGenerate() {
             resourceId: '',
             remarks: '',
             locationId: '',
+            isPatientContacted: false,
             appoinmentTreatments: []
         });
         setSelectedEventId(null);
@@ -849,7 +901,9 @@ function TokenGenerate() {
                                                             ? appt.appointmentTreatments.map(t => t.treatmentTypeId)
                                                             : [],
                                                         appoinmentTreatments: appt.appointmentTreatments || [],
-                                                        childAppointments: appt.childAppointments || []
+                                                        childAppointments: appt.childAppointments || [],
+                                                        IsNeededToFollowUp: appt.isNeededToFollowUp,
+                                                        isPatientContacted: appt.isPatientContacted
                                                     });
                                                     setStartTime(startTime)
                                                     setEndTime(endTime)
@@ -880,7 +934,8 @@ function TokenGenerate() {
                                                 id="customerName"
                                                 name="customerName"
                                                 value={appointmentData.customerName}
-                                                onChange={handleInputChange} required
+                                                onChange={handleInputChange} 
+                                                required
                                             />
                                         </div>
                                         <div className="col-md-6 form-group">
@@ -936,6 +991,29 @@ function TokenGenerate() {
                                             />
                                         </div>
                                     </div>
+                                    <br/>
+                                    <div className="row">
+                                        <div className="col-md-3 form-group">
+                                            <label className="form-check-label" htmlFor="isPatientContacted" style={{color:'red'}}>
+                                                Patient Contacted
+                                            </label>
+                                        </div>
+                                        <div className="col-md-6 form-group form-check form-switch">
+                                            <input
+                                                className="form-check-input"
+                                                type="checkbox"
+                                                id="isPatientContacted"
+                                                checked={appointmentData.isPatientContacted}
+                                                onChange={(e) =>
+                                                    setAppointmentData({
+                                                        ...appointmentData,
+                                                        isPatientContacted: e.target.checked
+                                                    })
+                                                    }
+                                                disabled={appointmentData.IsNeededToFollowUp != true}
+                                            />
+                                        </div>
+                                    </div><br/>
                                     <div className="custom-modal-footer row">
                                         <div className="col-6 p-2">
                                             <button
