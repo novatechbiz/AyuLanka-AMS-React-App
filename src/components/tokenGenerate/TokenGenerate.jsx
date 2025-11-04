@@ -90,7 +90,7 @@ function TokenGenerate() {
 
 
     // Read values from env
-    const rows = Number(process.env.REACT_APP_TOTAL_ROWS) || 15;
+    const rows = Number(process.env.REACT_APP_TOTAL_ROWS) || 17;
     const cols = Number(process.env.REACT_APP_TOKENS_PER_ROW) || 8;
     const startHour = Number(process.env.REACT_APP_APPOINTMENT_START_HOUR) || 7; // 7 AM
     const totalTokens = rows * cols;
