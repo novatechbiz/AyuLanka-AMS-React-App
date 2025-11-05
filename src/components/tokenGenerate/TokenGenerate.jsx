@@ -1010,7 +1010,6 @@ function TokenGenerate() {
                                                         isPatientContacted: e.target.checked
                                                     })
                                                     }
-                                                disabled={appointmentData.IsNeededToFollowUp != true}
                                             />
                                         </div>
                                     </div><br/>
