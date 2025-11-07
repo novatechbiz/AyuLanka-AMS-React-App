@@ -162,6 +162,47 @@ function TokenGenerate() {
         loadData();
     }, []);
 
+    useEffect(() => {
+        const autoAssignNextToken = async () => {
+            if (!nextAppointmentData.scheduleDate || !nextAppointmentData.startTime) return;
+    
+            try {
+                // Fetch all tokens for that date
+                const tokens = await fetchTokensByDate(nextAppointmentData.scheduleDate);
+    
+                // Convert selected time to hour (e.g. 09:30 → 9)
+                const selectedHour = new Date(nextAppointmentData.startTime).getHours();
+    
+                // Filter tokens that belong to that hour range
+                const startTokenNo = (selectedHour - startHour) * cols + 1;
+                const endTokenNo = startTokenNo + cols - 1;
+    
+                const bookedInHour = tokens
+                    .map(t => parseInt(t.tokenNo, 10))
+                    .filter(no => no >= startTokenNo && no <= endTokenNo);
+    
+                // Find next available token in that hour
+                let nextAvailable = null;
+                for (let i = startTokenNo; i <= endTokenNo; i++) {
+                    if (!bookedInHour.includes(i)) {
+                        nextAvailable = i;
+                        break;
+                    }
+                }
+    
+                setNextAppointmentData(prev => ({
+                    ...prev,
+                    tokenNo: nextAvailable ?? null // null if full
+                }));
+            } catch (err) {
+                console.error("Failed to auto assign token:", err);
+            }
+        };
+    
+        autoAssignNextToken();
+    }, [nextAppointmentData.scheduleDate, nextAppointmentData.startTime]);
+    
+
 
     // 🔹 Extract booked token numbers as integers
     const addedTokens = bookedTokens
@@ -242,7 +283,7 @@ function TokenGenerate() {
                                             </span>
                                         )}
     
-                                        {/* ⭐ Star icon if contacted */}
+                                        {/* Star icon if contacted */}
                                         {booked?.isPatientContacted && (
                                             <span
                                                 style={{
