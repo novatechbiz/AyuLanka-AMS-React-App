@@ -288,10 +288,10 @@ function TokenGenerate() {
                                             <span
                                                 style={{
                                                     position: "absolute",
-                                                    top: "5px",
+                                                    top: "-2px",
                                                     right: "6px",
-                                                    color: "gold",
-                                                    fontSize: "18px",
+                                                    color: "blue",
+                                                    fontSize: "20px",
                                                 }}
                                                 title="Patient Contacted"
                                             >
