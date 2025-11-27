@@ -85,6 +85,7 @@ function TokenGenerate() {
         locationId: "",
         treatmentTypeId: [],
         scheduleDate: new Date(),
+        employeeId: "",
         startTime: null,
         isNeededToFollowUp: false,
     });
@@ -677,6 +678,7 @@ function TokenGenerate() {
             EnteredDate: new Date().toISOString(),
             TokenNo: nextAppointmentData.tokenNo,
             LocationId: nextAppointmentData.locationId != "" ? nextAppointmentData.locationId : null,
+            EmployeeId: nextAppointmentData.employeeId != "" ? nextAppointmentData.employeeId : null,
             IsTokenIssued: false,
             MainTreatmentArea: nextAppointmentData.locationType,
             appoinmentTreatments: treatmentModels,
@@ -1008,6 +1010,15 @@ function TokenGenerate() {
                                             />
                                         </div>
                                     </div>
+                                    <div className="row">
+                                        <div className="col-md-6 form-group">
+                                            <label htmlFor="employeeId">Employee</label>
+                                            <select className={`form-control ${formErrors.employeeId ? 'is-invalid' : ''}`} id="employeeId" name="employeeId" value={appointmentData.employeeId} onChange={handleInputChange} required>
+                                                <option value="">Select an Employee</option>
+                                                {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.employeeNumber} - {emp.callingName}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
                                     <div className='row'>
                                         <div className="col-md-6 form-group">
                                             <label htmlFor="scheduleDate">Schedule Date <span className="text-danger">*</span></label><br />
@@ -1236,7 +1247,27 @@ function TokenGenerate() {
                                     />
                                 </div>
                             </div>
-
+                            <div className="row">
+                                <div className="col-md-6 form-group">
+                                    <label htmlFor="employeeId">Employee</label>
+                                    <select 
+                                        className={`form-control ${formErrors.employeeId ? 'is-invalid' : ''}`} 
+                                        id="employeeId" 
+                                        name="employeeId" 
+                                        value={nextAppointmentData.employeeId} 
+                                        onChange={(e) =>
+                                            setNextAppointmentData({
+                                                ...nextAppointmentData,
+                                                employeeId: e.target.value
+                                            })
+                                        }
+                                        required
+                                    >
+                                        <option value="">Select an Employee</option>
+                                        {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.employeeNumber} - {emp.callingName}</option>)}
+                                    </select>
+                                </div>
+                            </div>
                             <div className="row">
                                 <div className="col-md-6 form-group">
                                     <label>Schedule Date</label>&nbsp;&nbsp;&nbsp;
