@@ -213,7 +213,7 @@ function AppointmentScheduler() {
                 employeeId: appointment.employeeId,
                 backgroundColor: getBackgroundColor(
                     appointment.employeeId,
-                    appointment.tokenNo,
+                    appointment.chitNo,
                     appointment.actualFromTime,
                     appointment.actualToTime
                 ),
@@ -291,17 +291,17 @@ function AppointmentScheduler() {
         setFormErrors(prevErrors => ({ ...prevErrors, scheduleDate: !date }));
     };
 
-    const getBackgroundColor = (employeeId, tokenNo, actualStart, actualend) => {
-        if ((employeeId == null || employeeId == "") && (tokenNo == null || tokenNo == "")) {
+    const getBackgroundColor = (employeeId, chitNo, actualStart, actualend) => {
+        if ((employeeId == null || employeeId == "") && (chitNo == null || chitNo == "")) {
             // Luminous dark gray
             return '#6E6E6E';
-        } else if ((employeeId == null || employeeId == "") && (tokenNo != null && tokenNo != "")) {
+        } else if ((employeeId == null || employeeId == "") && (chitNo != null && chitNo != "")) {
             // Luminous red
             return '#FF3333';
-        } else if ((employeeId != null && employeeId != "") && (tokenNo == null || tokenNo == "")) {
+        } else if ((employeeId != null && employeeId != "") && (chitNo == null || chitNo == "")) {
             // Luminous orange
             return '#FF9900';
-        } else if ((employeeId != null && employeeId != "") && (tokenNo != null && tokenNo != "")
+        } else if ((employeeId != null && employeeId != "") && (chitNo != null && chitNo != "")
             && (actualStart != null && actualStart != "") && (actualend != null && actualend != "")) {
             // Luminous green
             return '#33CC33';
@@ -619,70 +619,100 @@ function AppointmentScheduler() {
 
     const handleEventDrop = async (info) => {
         const { event } = info;
-        setDropEvent(info)
+        setDropEvent(info);
         const startTime = moment(event.start).toDate();
         const endTime = moment(event.end).toDate();
-        setIsEventDrop(true)
-
+        setIsEventDrop(true);
+    
         try {
             const appointmentDetails = await fetchAppointmentDetails(event.id);
-
             const treatmentTypeIds = appointmentDetails.appointmentTreatments.map(treatment => treatment.treatmentTypeId);
-
+            
             console.log('treatmentTypeIds', appointmentDetails);
-
+    
             const treatmentTypesbyLocations = await fetchTreatmentTypesByLocation();
-
             const scheduleDate = moment(startTime).toDate();
             console.log('Schedule Date:', scheduleDate);
-
+    
+            // Employee-based validations - CORRECTED VERSION
             if (appointmentDetails.employeeId) {
                 const treatmentTypesNew = treatmentTypesbyLocations.filter(item => item.locationId === parseInt(event._def.resourceIds[0]));
-                //const selectedTreatment = treatmentTypesNew.find(type => type.treatmentTypeId.toString() === appointmentDetails.treatmentLocation.treatmentTypeId.toString());
                 const selectedEmployee = employees.find(emp => emp.id.toString() === appointmentDetails.employeeId.toString());
 
-                // if (!selectedTreatment || !selectedEmployee) {
-                //     setNotification({ message: "Selected treatment type or employee is invalid.", type: 'error' });
-                //     return;
-                // }
+                // CHECK 1: Employee overlap (same employee, any resource)
+                const isEmployeeOverlap = currentEvents.some(event => {
+                    if (event.id.toString() === info.event.id.toString()) return false;
 
-                const isOverlap = currentEvents.some(event => {
-                    if (appointmentData.id && (event.id.toString() === appointmentData.id.toString())) return false;
-
-                    console.log('current event: ', appointmentData.id, 'checking event: ', event.id);
+                    console.log('EMPLOYEE OVERLAP CHECK - current dropped event:', info.event.id, 'checking event:', event.id);
 
                     const eventEmployeeId = event.employeeId;
-                    const eventStart = moment(event.start).toDate();
-                    const eventEnd = moment(event.end).toDate();
-                    const isStartWithinEvent = startTime >= eventStart && startTime < eventEnd;
-                    const isEndWithinEvent = endTime > eventStart && endTime <= eventEnd;
-                    const isEventWithinNew = eventStart >= startTime && eventEnd <= endTime;
+                    const isSameEmployee = Number(eventEmployeeId) === Number(selectedEmployee.id);
+                    
+                    if (!isSameEmployee) return false; // Only check same employee
 
-                    // Check if the employee is the same but the resource is different
-                    const isSameEmployee = eventEmployeeId === selectedEmployee.id;
-                    const isDifferentResource = event.resourceId !== appointmentData.resourceId;
+                    const hasTimeOverlap = moment(startTime).isBefore(event.end) && moment(endTime).isAfter(event.start);
 
-                    // If same employee but different resource, allow it (no overlap)
-                    if (isSameEmployee && isDifferentResource) return false;
+                    console.log('Employee overlap details:', {
+                        eventEmployeeId,
+                        selectedEmployeeId: selectedEmployee.id,
+                        isSameEmployee,
+                        hasTimeOverlap
+                    });
 
-                    // Otherwise, check for overlaps
-                    return isSameEmployee && (isStartWithinEvent || isEndWithinEvent || isEventWithinNew);
+                    return hasTimeOverlap;
                 });
 
-                // Trigger the modal if there's an overlap and the user hasn't confirmed
-                if (isOverlap && !isConfirmed) {
-                    setNotification({ message: `The selected room is already in use during this time slot.`, type: 'error' });
-                    console.log('setIsConfirmModalOpenForValidation5')
+                console.log('Employee overlap result:', isEmployeeOverlap);
+
+                // CHECK 2: Resource overlap (same resource, any employee) 
+                const newResourceId = Number(info.event._def.resourceIds[0]);
+                const isResourceOverlapWithEmployee = currentEvents.some(event => {
+                    if (event.id.toString() === info.event.id.toString()) return false;
+
+                    console.log('RESOURCE OVERLAP CHECK - current dropped event:', info.event.id, 'checking event:', event.id);
+
+                    const eventResourceId = Number(event.resourceId);
+                    const isSameResource = eventResourceId === newResourceId;
+                    
+                    if (!isSameResource) return false; // Only check same resource
+
+                    const hasTimeOverlap = moment(startTime).isBefore(event.end) && moment(endTime).isAfter(event.start);
+
+                    console.log('Resource overlap details:', {
+                        eventResourceId,
+                        newResourceId,
+                        isSameResource,
+                        hasTimeOverlap
+                    });
+
+                    return hasTimeOverlap;
+                });
+
+                console.log('Resource overlap result:', isResourceOverlapWithEmployee);
+
+                // Combine both checks - overlap occurs if EITHER condition is true
+                const hasAnyOverlap = isEmployeeOverlap || isResourceOverlapWithEmployee;
+
+                console.log('Final overlap result (employee OR resource):', hasAnyOverlap);
+
+                // Trigger the modal if there's ANY overlap and the user hasn't confirmed
+                if (hasAnyOverlap && !isConfirmed) {
+                    if (isEmployeeOverlap) {
+                        setNotification({ message: `The employee ${selectedEmployee.fullName} already has an appointment during this time slot.`, type: 'error' });
+                    } else {
+                        setNotification({ message: `The selected room is already in use during this time slot.`, type: 'error' });
+                    }
+                    console.log('setIsConfirmModalOpenForValidation5');
                     setIsConfirmModalOpenForValidation(true);
-                    return; // Stop form submission until user confirms
+                    return; // Stop execution
                 }
 
+                // Rest of your code (employee schedule validation, work hours, etc.)
                 const employeeSchedule = await fetchEmployeeSchedule(selectedEmployee.id, scheduleDate);
-
 
                 if (!employeeSchedule && !isConfirmed) {
                     setNotification({ message: `The selected employee is not available on the selected date.`, type: 'error' });
-                    console.log('setIsConfirmModalOpenForValidation6')
+                    console.log('setIsConfirmModalOpenForValidation6');
                     setIsConfirmModalOpenForValidation(true);
                     return;
                 }
@@ -719,56 +749,67 @@ function AppointmentScheduler() {
                     const isValid = isWithinWorkHours(startTimeString, endTimeString, convertedFromShift, convertedToShift);
 
                     if (!isValid && !isConfirmed) {
-                        setNotification({ message: `The appointment time does not align with the ${selectedEmployee.fullName}'s working hours. Shift of the selected employee is ${employeeSchedule.shiftMaster.fromTime} - ${employeeSchedule.shiftMaster.toTime}`, type: 'error' });
-                        console.log('setIsConfirmModalOpenForValidation7')
+                        setNotification({ 
+                            message: `The appointment time does not align with the ${selectedEmployee.fullName}'s working hours. Shift of the selected employee is ${employeeSchedule.shiftMaster.fromTime} - ${employeeSchedule.shiftMaster.toTime}`, 
+                            type: 'error' 
+                        });
+                        console.log('setIsConfirmModalOpenForValidation7');
                         setIsConfirmModalOpenForValidation(true);
-                        return;
+                        return; // Stop execution
                     }
                 }
             }
+    
+            // Resource overlap check - AGGRESSIVE TYPE FIX
+            const newResourceId = parseInt(info.event._def.resourceIds[0]);
 
-            // Check for overlapping appointments within the same resource (e.g., room, machine)
-            if (appointmentData.resourceId) {
-                const selectedResource = resources.find(resource => resource.id.toString() === appointmentData.resourceId);
+            const isResourceOverlap = currentEvents.some(event => {
+                if (event.id.toString() === info.event.id.toString()) return false;
+                
+                // Force both to numbers for comparison
+                const eventResourceId = Number(event.resourceId);
+                const newResourceIdNum = Number(newResourceId);
+                
+                console.log(`Resource comparison: ${eventResourceId} (${typeof eventResourceId}) vs ${newResourceIdNum} (${typeof newResourceIdNum})`);
+                
+                if (eventResourceId !== newResourceIdNum) return false;
+                
+                // Simple time overlap check
+                const eventStart = new Date(event.start);
+                const eventEnd = new Date(event.end);
+                
+                return (startTime < eventEnd && endTime > eventStart);
+            });
 
-                const isResourceOverlap = currentEvents.some(event => {
-                    if (appointmentData.id && (event.id.toString() === appointmentData.id.toString())) return false;
-                    const eventResourceId = event.resourceId;
-                    const eventStart = moment(event.start).toDate();
-                    const eventEnd = moment(event.end).toDate();
-                    const isStartWithinEvent = startTime >= eventStart && startTime < eventEnd;
-                    const isEndWithinEvent = endTime > eventStart && endTime <= eventEnd;
-                    const isEventWithinNew = eventStart >= startTime && eventEnd <= endTime;
+            console.log('Final isResourceOverlap result:', isResourceOverlap);
+            console.log('=== END DEBUG INFO ===');
 
-                    return eventResourceId === appointmentData.resourceId && (isStartWithinEvent || isEndWithinEvent || isEventWithinNew);
-                });
-
-                if (isResourceOverlap && !isConfirmed) {
-                    setNotification({ message: `The selected room is already in use during this time slot.`, type: 'error' });
-                    console.log('setIsConfirmModalOpenForValidation8')
-                    setIsConfirmModalOpenForValidation(true);
-                    return;
-                }
+            if (isResourceOverlap && !isConfirmed) {
+                setNotification({ message: `The selected room is already in use during this time slot.`, type: 'error' });
+                console.log('setIsConfirmModalOpenForValidation8');
+                setIsConfirmModalOpenForValidation(true);
+                return;
             }
-
+    
+            // Only proceed if all validations pass or user has confirmed
             const userId = sessionStorage.getItem('userId');
-
+    
             const updatedEvents = currentEvents.map(ev => {
                 if (ev.id === event.id) {
                     return { ...ev, start: startTime, end: endTime };
                 }
                 return ev;
             });
-
+    
             setCurrentEvents(updatedEvents);
-
+    
             // Map treatment type IDs to AppoinmentTreatmentRequestModel
             const treatmentModels = treatmentTypeIds.map(treatmentTypeId => ({
                 Id: 0, // Assuming new appointment (you can set as needed)
                 AppoinmentId: null, // Since it's a new appointment
                 TreatmentTypeId: parseInt(treatmentTypeId, 10) // Convert to integer
             }));
-
+    
             setAppointmentData({
                 id: event.id,
                 scheduleDate: scheduleDate,
@@ -789,11 +830,10 @@ function AppointmentScheduler() {
                 remarks: appointmentDetails.remarks,
                 appoinmentTreatments: treatmentModels
             });
-
+    
             const appointmentDataToSend = {
                 Id: event.id,
                 ScheduleDate: moment(scheduleDate).toISOString(),
-                //TreatmentTypeId: filteredTreatmentType.id,
                 EmployeeId: appointmentDetails.employeeId ? appointmentDetails.employeeId : 0,
                 SecondaryEmployeeId: appointmentDetails.secondaryEmployeeId ? appointmentDetails.secondaryEmployeeId : 0,
                 DoctorEmployeeId: appointmentDetails.doctorEmployeeId ? appointmentDetails.doctorEmployeeId : 0,
@@ -803,7 +843,7 @@ function AppointmentScheduler() {
                 ToTime: moment(endTime).format('HH:mm:ss'),
                 ActualFromTime: appointmentDetails.actualFromTime,
                 ActualToTime: appointmentDetails.actualToTime,
-                ctualFromTimeSecond: appointmentDetails.actualFromTimeSecond,
+                ActualFromTimeSecond: appointmentDetails.actualFromTimeSecond,
                 ActualToTimeSecond: appointmentDetails.actualToTimeSecond,
                 EnteredBy: userId,
                 EnteredDate: moment().toISOString(),
@@ -812,7 +852,7 @@ function AppointmentScheduler() {
                 LocationId: event._def.resourceIds[0],
                 AppoinmentTreatments: treatmentModels
             };
-
+    
             console.log('appointmentDataToSend', appointmentDataToSend);
             const createdAppointment = await addAppointment(appointmentDataToSend);
             setModalContent({ type: 'success', message: 'Appointment updated successfully!' });

@@ -76,7 +76,7 @@ function TokenGenerate() {
     const [eliteAppointments, setEliteAppointments] = useState([]);
     const [selectedEliteAppointment, setSelectedEliteAppointment] = useState(null);
     const [selectedTokenNo, setSelectedTokenNo] = useState(null);
-
+    const [searchTerm, setSearchTerm] = useState('');
     const [isNextAppointmentModalOpen, setIsNextAppointmentModalOpen] = useState(false);
     const [nextAppointmentData, setNextAppointmentData] = useState({
         customerName: "",
@@ -214,6 +214,12 @@ function TokenGenerate() {
         let tokenNumber = 1;
         const tokenLayout = [];
     
+        // Filter tokens based on search term
+        const filteredBookedTokens = bookedTokens.filter(bt => 
+            bt.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            bt.contactNo?.includes(searchTerm)
+        );
+    
         for (let r = 0; r < rows; r++) {
             const rowStartHour = startHour + r;
             const rowEndHour = rowStartHour + 1;
@@ -234,6 +240,11 @@ function TokenGenerate() {
     
                             // Find booked token object for this number
                             const booked = bookedTokens.find(bt => parseInt(bt.tokenNo, 10) === current);
+    
+                            // If searching and this token doesn't match, don't render it
+                            if (searchTerm && !filteredBookedTokens.some(bt => parseInt(bt.tokenNo, 10) === current)) {
+                                return null;
+                            }
     
                             let btnClass = "btn-secondary"; // default for free
                             if (booked) {
@@ -283,6 +294,45 @@ function TokenGenerate() {
                                                 Chit: {booked.chitNo}
                                             </span>
                                         )}
+    
+                                        {/* Customer name (show when searching) */}
+                                        {/* {searchTerm && booked?.customerName && (
+                                            <span
+                                                style={{
+                                                    fontSize: "10px",
+                                                    fontWeight: "normal",
+                                                    color: "#fff",
+                                                    backgroundColor: "rgba(0,0,0,0.5)",
+                                                    borderRadius: "4px",
+                                                    padding: "1px 4px",
+                                                    marginTop: "2px",
+                                                    maxWidth: "70px",
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    whiteSpace: "nowrap",
+                                                }}
+                                                title={booked.customerName}
+                                            >
+                                                {booked.customerName}
+                                            </span>
+                                        )} */}
+    
+                                        {/* Contact number (show when searching) */}
+                                        {/* {searchTerm && booked?.contactNo && (
+                                            <span
+                                                style={{
+                                                    fontSize: "10px",
+                                                    fontWeight: "normal",
+                                                    color: "#fff",
+                                                    backgroundColor: "rgba(0,0,0,0.5)",
+                                                    borderRadius: "4px",
+                                                    padding: "1px 4px",
+                                                    marginTop: "2px",
+                                                }}
+                                            >
+                                                {booked.contactNo}
+                                            </span>
+                                        )} */}
     
                                         {/* Star icon if contacted */}
                                         {booked?.isPatientContacted && (
@@ -448,6 +498,76 @@ function TokenGenerate() {
             setEndTime(date);
             // Update the appointmentData state with the new startTime and calculated endTime
             setAppointmentData(prevState => ({
+                ...prevState,
+                endTime: date
+            }));
+        }
+    };
+
+    const handleNextAppointmentTimeChange = (date, name) => {
+        console.log('treatmentTypes', treatmentTypes);
+
+        if (name === 'startTime') {
+            setNotification({ message: '', type: '' });
+
+            // Check required fields and set errors
+            const errors = {
+                customerName: !appointmentData.customerName,
+                contactNo: !appointmentData.contactNo,
+                treatmentTypeId: !appointmentData.treatmentTypeId,
+                // employeeId: !appointmentData.employeeId,
+                scheduleDate: !appointmentData.scheduleDate
+            };
+
+            setFormErrors(errors);
+
+            // If any field has an error, stop the form submission
+            if (Object.values(errors).some(error => error)) {
+                console.log('Validation errors', errors);
+                return;
+            }
+
+            setStartTime(date);
+
+            let totalDurationMilliseconds = 0; // Initialize total duration for multiple treatments
+
+            // Iterate over the selected treatment type IDs
+            appointmentData.treatmentTypeId.forEach(option => {
+                // Find the treatment that matches the selected treatmentTypeId inside the treatmentType object
+                const selectedTreatment = treatmentTypes.find(t => t.id == option);
+                console.log(`Dropdown changed: treatmentTypeId = ${option}, selectedTreatment = `, selectedTreatment);  // Debugging line
+
+                if (selectedTreatment) {
+                    let durationMilliseconds = 0;
+
+                    const { durationHours, durationMinutes } = selectedTreatment; // Destructure duration fields
+
+                    if (durationHours || durationMinutes) {
+                        // Calculate duration in milliseconds
+                        durationMilliseconds = (durationHours * 3600 + (durationMinutes || 0) * 60) * 1000;
+
+                        // Accumulate total duration
+                        totalDurationMilliseconds += durationMilliseconds;
+                    }
+                }
+            });
+
+            // Calculate new end time based on the total duration
+            const newEndTime = new Date(date.getTime() + totalDurationMilliseconds);
+            setEndTime(newEndTime);
+
+            // Update the appointmentData state with the new startTime and calculated endTime
+            setNextAppointmentData(prevState => ({
+                ...prevState,
+                startTime: date,
+                endTime: newEndTime
+            }));
+        }
+
+        if (name === 'endTime') {
+            setEndTime(date);
+            // Update the appointmentData state with the new startTime and calculated endTime
+            setNextAppointmentData(prevState => ({
                 ...prevState,
                 endTime: date
             }));
@@ -825,6 +945,81 @@ function TokenGenerate() {
                     className="border rounded p-1"
                 />
             </h2><br />
+
+            {/* Search Bar */}
+            <div className="row mb-4">
+                <div className="col-md-6">
+                    <div className="input-group" style={{ 
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        borderRadius: '10px'
+                    }}>
+                        <span className="input-group-text" style={{ 
+                            backgroundColor: '#f8f9fa',
+                            border: 'none',
+                            borderRight: '1px solid #dee2e6',
+                            padding: '12px 15px',
+                            borderTopLeftRadius: '10px',
+                            borderBottomLeftRadius: '10px'
+                        }}>
+                            <i className="fas fa-search" style={{ color: '#6c757d' }}></i>
+                        </span>
+                        <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Search by customer name or contact number..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{
+                                border: 'none',
+                                padding: '12px 15px',
+                                fontSize: '16px',
+                                backgroundColor: '#fff',
+                                boxShadow: 'none'
+                            }}
+                        />
+                        {searchTerm && (
+                            <button
+                                className="btn"
+                                type="button"
+                                onClick={() => setSearchTerm('')}
+                                style={{
+                                    backgroundColor: '#dc3545',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '12px 20px',
+                                    fontWeight: '600',
+                                    transition: 'all 0.3s ease',
+                                    borderTopRightRadius: '10px',
+                                    borderBottomRightRadius: '10px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.backgroundColor = '#c82333';
+                                    e.target.style.transform = 'scale(1.05)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.backgroundColor = '#dc3545';
+                                    e.target.style.transform = 'scale(1)';
+                                }}
+                            >
+                                Clear
+                                <i className="fas fa-times"></i>
+                            </button>
+                        )}
+                    </div>
+                    {searchTerm && (
+                        <small className="text-muted mt-2 d-block">
+                            Showing {bookedTokens.filter(bt => 
+                                bt.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                bt.contactNo?.includes(searchTerm)
+                            ).length} of {bookedTokens.length} tokens
+                        </small>
+                    )}
+                </div>
+            </div>
+
             <NotificationComponent
                 message={notification.message}
                 type={notification.type}
@@ -882,7 +1077,8 @@ function TokenGenerate() {
                                     onChange={(e) => setLocationType(e.target.value)}
                                 >
                                     <option value="1">Prime Care</option>
-                                    <option value="2">Elite Care</option>
+                                    <option value="2">Elite Care (Existing Appointment)</option>
+                                    <option value="3">Elite Care (New Appointment)</option>
                                 </select>
                             </div>
                             <div className="col-md-3 form-group">
@@ -965,7 +1161,7 @@ function TokenGenerate() {
                                 </div>
                             </div>
                         )}
-                        {(locationType == "1" || (locationType == "2" && selectedEliteAppointment)) && (
+                        {(locationType == "1" || locationType == "3" || (locationType == "2" && selectedEliteAppointment)) && (
                             <form onSubmit={handleSubmit} className="modal-appoinment-body modal-body custom-modal-body">
                                 <div className="container-fluid">
                                     <div className="row">
@@ -1288,12 +1484,7 @@ function TokenGenerate() {
                                     <label>Start Time</label>&nbsp;&nbsp;&nbsp;
                                     <DatePicker
                                         selected={nextAppointmentData.startTime}
-                                        onChange={(date) =>
-                                            setNextAppointmentData({
-                                                ...nextAppointmentData,
-                                                startTime: date
-                                            })
-                                        }
+                                        onChange={(date) => handleNextAppointmentTimeChange(date, 'startTime')}
                                         showTimeSelect
                                         showTimeSelectOnly
                                         timeIntervals={15}
