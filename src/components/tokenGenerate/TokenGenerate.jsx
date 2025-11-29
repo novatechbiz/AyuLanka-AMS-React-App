@@ -512,11 +512,11 @@ function TokenGenerate() {
 
             // Check required fields and set errors
             const errors = {
-                customerName: !appointmentData.customerName,
-                contactNo: !appointmentData.contactNo,
-                treatmentTypeId: !appointmentData.treatmentTypeId,
+                customerName: !nextAppointmentData.customerName,
+                contactNo: !nextAppointmentData.contactNo,
+                treatmentTypeId: !nextAppointmentData.treatmentTypeId,
                 // employeeId: !appointmentData.employeeId,
-                scheduleDate: !appointmentData.scheduleDate
+                scheduleDate: !nextAppointmentData.scheduleDate
             };
 
             setFormErrors(errors);
@@ -532,7 +532,7 @@ function TokenGenerate() {
             let totalDurationMilliseconds = 0; // Initialize total duration for multiple treatments
 
             // Iterate over the selected treatment type IDs
-            appointmentData.treatmentTypeId.forEach(option => {
+            nextAppointmentData.treatmentTypeId.forEach(option => {
                 // Find the treatment that matches the selected treatmentTypeId inside the treatmentType object
                 const selectedTreatment = treatmentTypes.find(t => t.id == option);
                 console.log(`Dropdown changed: treatmentTypeId = ${option}, selectedTreatment = `, selectedTreatment);  // Debugging line
