@@ -126,7 +126,7 @@ function ChangeDayOff() {
         setLoading(true);
         try {
             let dayOffChangeDetails = [];
-            if (reason === 'management_request') {
+            if (reason === 'management_request' || reason === 'employee_request') {
                 // Collect details for management request
                 dayOffChangeDetails = dayOffs.filter(dayOff =>
                     newDayOffs[dayOff.dayOffDate] &&
@@ -219,7 +219,7 @@ function ChangeDayOff() {
                                 <select className={`form-control ${shouldShowError('reason') ? 'error-border' : ''}`} value={reason} onChange={handleReasonChange}>
                                     <option value="">Select a reason</option>
                                     <option value="management_request">On Management Request</option>
-                                    {/* <option value="exchange_request">Exchange Request</option> */}
+                                    <option value="employee_request">Employee Request</option>
                                 </select><br />
                             </div>
                         </div>

@@ -68,7 +68,7 @@ function ChangeShift() {
         try {
             let shiftChangeDetails = [];
 
-            if (reason === 'management_request') {
+            if (reason == 'management_request' || reason == "employee_request") {
                 // Collect details for management request
                 shiftChangeDetails = employeeShifts.filter(shift =>
                     shift.newShiftId &&
@@ -86,7 +86,7 @@ function ChangeShift() {
             const shiftChangeMasterRequest = {
                 StaffRosterMasterId: parseInt(selectedRosterId),
                 EmployeeId: parseInt(selectedEmployee),
-                ShiftChangeReasonId: reason === 'management_request' ? 1 : 0
+                ShiftChangeReasonId: reason === 'management_request' ? 1 : 2
             };
 
             const dataToSend = {
@@ -138,7 +138,7 @@ function ChangeShift() {
                                 <select className={`form-control ${shouldShowError('reason') ? 'error-border' : ''}`} value={reason} onChange={handleReasonChange}>
                                     <option value="">Select a reason</option>
                                     <option value="management_request">On Management Request</option>
-                                    {/* <option value="exchange_request">Exchange Request</option> */}
+                                    <option value="employee_request">Employee Request</option>
                                 </select><br />
                             </div>
                         </div>
