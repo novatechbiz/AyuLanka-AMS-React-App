@@ -8,7 +8,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './TokenGenerate.css'; // Ensure this file contains your custom styles
-import { fetchAppointmentsByDateRange, fetchTokensByDate, deleteAppointment, fetchEmployees, fetchPrimeCareTreatmentLocations, fetchEliteCareTreatmentLocations, addAppointment, fetchTreatmentTypesByLocation } from '../../services/appointmentSchedulerApi.js';
+import { fetchAppointmentsByDateRange,fetchEmployeeSchedule, fetchTokensByDate, deleteAppointment, fetchEmployees, fetchPrimeCareTreatmentLocations, fetchEliteCareTreatmentLocations, addAppointment, fetchTreatmentTypesByLocation } from '../../services/appointmentSchedulerApi.js';
 import { ConfirmationModal } from '../confirmationModal/confirmationModal.jsx';
 import { NotificationComponent } from '../notificationComponent/notificationComponent.jsx';
 import AppointmentModalComponent from '../appointmentModalComponent/appointmentModalComponent.jsx';
@@ -87,9 +87,10 @@ function TokenGenerate() {
         scheduleDate: new Date(),
         employeeId: "",
         startTime: null,
+        endTime: null,
         isNeededToFollowUp: false,
     });
-
+    const [availableLocations, setAvailableLocations] = useState([]);
 
     // Read values from env
     const rows = Number(process.env.REACT_APP_TOTAL_ROWS) || 17;
@@ -203,7 +204,24 @@ function TokenGenerate() {
         autoAssignNextToken();
     }, [nextAppointmentData.scheduleDate, nextAppointmentData.startTime]);
     
-
+    useEffect(() => {
+        const fetchAvailableLocations = async () => {
+            if (nextAppointmentData.locationType !== "2") {
+                setAvailableLocations([]); // Not Elite Care
+                return;
+            }
+    
+            const locations = await getAvailableTreatmentLocations();
+            setAvailableLocations(locations || []);
+        };
+    
+        fetchAvailableLocations();
+    }, [
+        nextAppointmentData.scheduleDate,
+        nextAppointmentData.startTime,
+        nextAppointmentData.endTime,
+        nextAppointmentData.locationType
+    ]);
 
     // 🔹 Extract booked token numbers as integers
     const addedTokens = bookedTokens
@@ -685,7 +703,7 @@ function TokenGenerate() {
         let changedLocation = locationType;
         if(isMainLocationChanged) {
             if(locationType == 1) {
-                changedLocation = 2;
+                changedLocation = 3;
                 setAppointmentData(prevState => ({
                     ...prevState,
                     locationId: null
@@ -713,7 +731,7 @@ function TokenGenerate() {
             EnteredBy: userId,
             EnteredDate: new Date().toISOString(),
             TokenNo: appointmentData.tokenNo,
-            LocationId: appointmentData.locationId != "" ? appointmentData.locationId : null,
+            LocationId: !isMainLocationChanged && appointmentData.locationId != "" ? appointmentData.locationId : null,
             IsTokenIssued: isTokenIssue ? true : false,
             MainTreatmentArea: changedLocation,
             appoinmentTreatments: treatmentModels,
@@ -754,6 +772,7 @@ function TokenGenerate() {
         const {
             scheduleDate,
             startTime,
+            endTime,
             treatmentTypeId,
             locationType,
             customerName,
@@ -787,13 +806,156 @@ function TokenGenerate() {
                 .padStart(2, "0")}-${d.getDate().toString().padStart(2, "0")}`;
         };
 
+        const scheduleDateFormatted = formatDateOnly(nextAppointmentData.scheduleDate);
+        const existingAppointments = await fetchAppointmentsByDateRange(scheduleDateFormatted, scheduleDateFormatted);
+        setCurrentEvents(existingAppointments);
+
+        if (nextAppointmentData.employeeId) {
+
+            // Find the selected employee
+            // const selectedTreatment = treatmentTypes.find(type => type.id.toString() === appointmentData.treatmentTypeId);
+            const selectedEmployee = employees.find(emp => emp.id.toString() === nextAppointmentData.employeeId);
+            setSelectedEmployee(selectedEmployee)
+
+            if (!selectedEmployee) {
+                setNotification({ message: "Selected employee is invalid.", type: 'error' });
+                return;
+            }
+
+            // const safeStart = ensureTimeString(nextAppointmentData.startTime);
+            // const safeEnd = ensureTimeString(nextAppointmentData.endTime);
+        
+            // const newStart = combineDateAndTime(nextAppointmentData.scheduleDate, safeStart);
+            // const newEnd = combineDateAndTime(nextAppointmentData.scheduleDate, safeEnd);
+        
+            // const isResourceOverlap = existingAppointments.some((event, index) => {
+        
+            //     // Skip same event when editing
+            //     if (nextAppointmentData.id && event.id.toString() === nextAppointmentData.id.toString()) {
+            //         console.log("Skipping same event");
+            //         return false;
+            //     }
+        
+            //     const sameLocation = event.locationId == nextAppointmentData.locationId;
+        
+            //     if (!sameLocation) return false;
+        
+            //     const eventStart = combineDateAndTime(event.scheduleDate, event.fromTime);
+            //     const eventEnd = combineDateAndTime(event.scheduleDate, event.toTime);
+        
+            //     const isStartWithinEvent = newStart >= eventStart && newStart < eventEnd;
+            //     const isEndWithinEvent = newEnd > eventStart && newEnd <= eventEnd;
+            //     const isEventWithinNew = eventStart >= newStart && eventEnd <= newEnd;
+  
+            //     return isStartWithinEvent || isEndWithinEvent || isEventWithinNew;
+            // });
+        
+            // if (isResourceOverlap && !isConfirmed) {
+            //     setNotification({
+            //         message: `The selected room is already in use during this time slot.`,
+            //         type: "error"
+            //     });
+            //     setIsConfirmModalOpenForValidation(true);
+            //     return;
+            // }
+
+            
+            const employeeSchedule = await fetchEmployeeSchedule(selectedEmployee.id, scheduleDateFormatted);
+
+            if (!employeeSchedule && !isConfirmed) {
+                setNotification({ message: `The selected employee is not available on the selected date.`, type: 'error' });
+                console.log('setIsConfirmModalOpenForValidation2')
+                setIsConfirmModalOpenForValidation(true);
+                return;
+            }
+
+            const st = new Date(startTime);
+            const ed = new Date(endTime);
+
+            // Extract the time part in 24-hour format (HH:mm:ss)
+            const startTimeString = st.toLocaleTimeString('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false, // 24-hour format
+            });
+
+            const endTimeString = ed.toLocaleTimeString('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false, // 24-hour format
+            });
+
+            if (employeeSchedule) {
+                const convertedFromShift = employeeSchedule.shiftMaster.fromTime;
+                const convertedToShift = employeeSchedule.shiftMaster.toTime;
+
+                console.log('startTime:', startTime);
+                console.log('endTime:', endTime);
+                console.log('startTimeString:', startTimeString);
+                console.log('endTimeString:', endTimeString);
+                console.log('employeeSchedule.shiftMaster.fromTime:', employeeSchedule.shiftMaster.fromTime);
+                console.log('employeeSchedule.shiftMaster.toTime:', employeeSchedule.shiftMaster.toTime);
+
+                const isValid = isWithinWorkHours(startTimeString, endTimeString, convertedFromShift, convertedToShift);
+
+                if (!isValid && !isConfirmed) {
+                    setNotification({ message: `The appointment time does not align with the ${selectedEmployee.fullName}'s working hours. Shift of the selected employee is ${employeeSchedule.shiftMaster.fromTime} - ${employeeSchedule.shiftMaster.toTime}`, type: 'error' });
+                    console.log('setIsConfirmModalOpenForValidation3')
+                    setIsConfirmModalOpenForValidation(true);
+                    return;
+                }
+            }
+        }
+
+        // Check for overlapping appointments within the same resource (e.g., room, machine)
+        if (nextAppointmentData.locationId) {
+            const safeStart = ensureTimeString(nextAppointmentData.startTime);
+            const safeEnd = ensureTimeString(nextAppointmentData.endTime);
+        
+            const newStart = combineDateAndTime(nextAppointmentData.scheduleDate, safeStart);
+            const newEnd = combineDateAndTime(nextAppointmentData.scheduleDate, safeEnd);
+        
+            const isResourceOverlap = existingAppointments.some((event, index) => {
+        
+                // Skip same event when editing
+                if (nextAppointmentData.id && event.id.toString() === nextAppointmentData.id.toString()) {
+                    console.log("Skipping same event");
+                    return false;
+                }
+        
+                const sameLocation = event.locationId == nextAppointmentData.locationId;
+        
+                if (!sameLocation) return false;
+        
+                const eventStart = combineDateAndTime(event.scheduleDate, event.fromTime);
+                const eventEnd = combineDateAndTime(event.scheduleDate, event.toTime);
+        
+                const isStartWithinEvent = newStart >= eventStart && newStart < eventEnd;
+                const isEndWithinEvent = newEnd > eventStart && newEnd <= eventEnd;
+                const isEventWithinNew = eventStart >= newStart && eventEnd <= newEnd;
+  
+                return isStartWithinEvent || isEndWithinEvent || isEventWithinNew;
+            });
+        
+            if (isResourceOverlap && !isConfirmed) {
+                setNotification({
+                    message: `The selected room is already in use during this time slot.`,
+                    type: "error"
+                });
+                setIsConfirmModalOpenForValidation(true);
+                return;
+            }
+        }
+
         const appointmentDataToSend = {
             Id: 0,
             ScheduleDate: formatDateOnly(nextAppointmentData.scheduleDate),
             CustomerName: nextAppointmentData.customerName,
             ContactNo: nextAppointmentData.contactNo,
             FromTime: formatTimeForCSharp(nextAppointmentData.startTime),
-            ToTime: formatTimeForCSharp(nextAppointmentData.startTime),
+            ToTime: formatTimeForCSharp(nextAppointmentData.endTime),
             EnteredBy: userId,
             EnteredDate: new Date().toISOString(),
             TokenNo: nextAppointmentData.tokenNo,
@@ -819,6 +981,33 @@ function TokenGenerate() {
         }
     };    
 
+    const ensureTimeString = (value) => {
+        if (typeof value === "string") return value;           
+        if (value instanceof Date) return moment(value).format("HH:mm:ss");
+        return null;
+    };
+    
+    const combineDateAndTime = (date, timeString) => {
+    
+        const safeTime = ensureTimeString(timeString);
+    
+        if (!safeTime) {
+            console.error("Invalid timeString:", timeString);
+            return null;
+        }
+    
+        const [hours, minutes, seconds] = safeTime.split(":").map(Number);
+        const newDate = moment(date).toDate();
+        newDate.setHours(hours, minutes, seconds || 0, 0);
+        return newDate;
+    };
+    
+    
+
+    function isWithinWorkHours(appStart, appEnd, workStart, workEnd) {
+
+        return appStart >= workStart && appEnd <= workEnd;
+    }
 
     const refreshAppointments = async () => {
         window.location.reload();
@@ -926,6 +1115,54 @@ function TokenGenerate() {
         setIsNextAppointmentModalOpen(true);
     };
     
+    const getAvailableTreatmentLocations = async () => {
+        // Make sure locations exist
+        if (!Array.isArray(eliteCareTreatmentLocations)) return [];
+    
+        // If no date or time selected, return all locations
+        if (!nextAppointmentData.startTime || !nextAppointmentData.scheduleDate) {
+            return eliteCareTreatmentLocations;
+        }
+    
+        const newStart = combineDateAndTime(nextAppointmentData.scheduleDate, ensureTimeString(nextAppointmentData.startTime));
+        const newEnd = combineDateAndTime(
+            nextAppointmentData.scheduleDate,
+            ensureTimeString(nextAppointmentData.endTime || nextAppointmentData.startTime)
+        );
+    
+        const formatDateOnly = (date) => {
+            const d = (date instanceof Date) ? date : new Date(date);
+            return `${d.getFullYear()}-${(d.getMonth() + 1)
+                .toString()
+                .padStart(2, "0")}-${d.getDate().toString().padStart(2, "0")}`;
+        };
+
+        const scheduleDateFormatted = formatDateOnly(nextAppointmentData.scheduleDate);
+        const existingAppointments = await fetchAppointmentsByDateRange(scheduleDateFormatted, scheduleDateFormatted);
+        console.log('existingAppointments', existingAppointments)
+
+        // Filter out unavailable locations
+        const unavailableLocationIds = (existingAppointments || [])
+            .filter(event => {
+                if (event.mainTreatmentArea != "2") return false; // Only Elite Care
+                const eventStart = combineDateAndTime(event.scheduleDate, ensureTimeString(event.fromTime));
+                const eventEnd = combineDateAndTime(event.scheduleDate, ensureTimeString(event.toTime));
+    
+                const overlap =
+                    (newStart >= eventStart && newStart < eventEnd) ||
+                    (newEnd > eventStart && newEnd <= eventEnd) ||
+                    (eventStart >= newStart && eventEnd <= newEnd);
+    
+                return overlap;
+            })
+            .map(event => event.locationId);
+
+        console.log('unavailableLocationIds', unavailableLocationIds)
+    
+        // Return only available locations
+        return eliteCareTreatmentLocations.filter(loc => !unavailableLocationIds.includes(loc.id));
+    };
+    
 
     return (
         <div className="container">
@@ -1019,12 +1256,6 @@ function TokenGenerate() {
                     )}
                 </div>
             </div>
-
-            <NotificationComponent
-                message={notification.message}
-                type={notification.type}
-                onClose={() => setNotification({ message: '', type: '' })}
-            />
             {renderTokens()}
 
             <Modal
@@ -1060,12 +1291,6 @@ function TokenGenerate() {
                                 </div>
                             </div>
                         </div>
-
-                        <NotificationComponent
-                            message={notification.message}
-                            type={notification.type}
-                            onClose={() => setNotification({ message: '', type: '' })}
-                        />
                         <div className="row">
                             <div className="col-md-6 form-group">
                                 <label htmlFor="locationType">Location Type <span className="text-danger">*</span></label>
@@ -1325,6 +1550,11 @@ function TokenGenerate() {
                 contentLabel="Create Next Appointment"
             >
                 <div className="modal-dialog modal-lg">
+                <NotificationComponent
+                            message={notification.message}
+                            type={notification.type}
+                            onClose={() => setNotification({ message: '', type: '' })}
+                        />
                     <div className="modal-content custom-modal-content">
                         <div className="modal-header custom-modal-header row">
                             <div className='col-md-8'>
@@ -1377,7 +1607,6 @@ function TokenGenerate() {
                                     />
                                 </div>
                             </div>
-
                             <div className="row">
                                 <div className="col-md-6 form-group">
                                     <label>Location Type</label>
@@ -1395,28 +1624,6 @@ function TokenGenerate() {
                                         <option value="2">Elite Care</option>
                                     </select>
                                 </div>
-                                { nextAppointmentData.locationType == "2" && (
-                                    <div className="col-md-6 form-group">
-                                    <label>Treatment Location</label>
-                                    <select
-                                        className="form-control"
-                                        value={nextAppointmentData.locationId}
-                                        onChange={(e) =>
-                                            setNextAppointmentData({
-                                                ...nextAppointmentData,
-                                                locationId: e.target.value
-                                            })
-                                        }
-                                    >
-                                        <option value="">Select Treatment Location</option>
-                                        {eliteCareTreatmentLocations.map((location) => (
-                                        <option key={location.id} value={location.id}>
-                                            {location.name}
-                                        </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                )}
                                 <div className="col-md-6 form-group">
                                     <label>Treatment Type(s)</label>
                                     <Autocomplete
@@ -1441,27 +1648,6 @@ function TokenGenerate() {
                                         )}
                                         required
                                     />
-                                </div>
-                            </div>
-                            <div className="row">
-                                <div className="col-md-6 form-group">
-                                    <label htmlFor="employeeId">Employee</label>
-                                    <select 
-                                        className={`form-control ${formErrors.employeeId ? 'is-invalid' : ''}`} 
-                                        id="employeeId" 
-                                        name="employeeId" 
-                                        value={nextAppointmentData.employeeId} 
-                                        onChange={(e) =>
-                                            setNextAppointmentData({
-                                                ...nextAppointmentData,
-                                                employeeId: e.target.value
-                                            })
-                                        }
-                                        required
-                                    >
-                                        <option value="">Select an Employee</option>
-                                        {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.employeeNumber} - {emp.callingName}</option>)}
-                                    </select>
                                 </div>
                             </div>
                             <div className="row">
@@ -1493,6 +1679,51 @@ function TokenGenerate() {
                                         className="form-control"
                                         required
                                     />
+                                </div>
+                            </div>
+                            <div className='row'>
+                                { nextAppointmentData.locationType == "2" && (
+                                    <div className="col-md-6 form-group">
+                                    <label>Treatment Location</label>
+                                    <select
+                                        className="form-control"
+                                        value={nextAppointmentData.locationId}
+                                        onChange={(e) =>
+                                            setNextAppointmentData({
+                                                ...nextAppointmentData,
+                                                locationId: e.target.value
+                                            })
+                                        }
+                                    >
+                                        <option value="">Select Treatment Location</option>
+                                        {availableLocations.map((location) => (
+                                            <option key={location.id} value={location.id}>
+                                                {location.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                )}
+                            </div>
+                            <div className="row">
+                                <div className="col-md-6 form-group">
+                                    <label htmlFor="employeeId">Employee</label>
+                                    <select 
+                                        className={`form-control ${formErrors.employeeId ? 'is-invalid' : ''}`} 
+                                        id="employeeId" 
+                                        name="employeeId" 
+                                        value={nextAppointmentData.employeeId} 
+                                        onChange={(e) =>
+                                            setNextAppointmentData({
+                                                ...nextAppointmentData,
+                                                employeeId: e.target.value
+                                            })
+                                        }
+                                        required
+                                    >
+                                        <option value="">Select an Employee</option>
+                                        {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.employeeNumber} - {emp.callingName}</option>)}
+                                    </select>
                                 </div>
                             </div><br/>
                             <div className="row">
