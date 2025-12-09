@@ -91,6 +91,7 @@ function TokenGenerate() {
         isNeededToFollowUp: false,
     });
     const [availableLocations, setAvailableLocations] = useState([]);
+    const [loadingTokens, setLoadingTokens] = useState(false);
 
     // Read values from env
     const rows = Number(process.env.REACT_APP_TOTAL_ROWS) || 17;
@@ -101,12 +102,15 @@ function TokenGenerate() {
     useEffect(() => {
         const loadAppointments = async () => {
             try {
+                setLoadingTokens(true);
                 const tokens = await fetchTokensByDate(selectedDate);
                 setBookedTokens(tokens)
                 console.log("tokens:", tokens);
                 // setState(appointments) if you want to store them
             } catch (err) {
                 console.error("Failed to fetch tokens:", err);
+            } finally {
+                setLoadingTokens(false);
             }
         };
 
@@ -534,7 +538,8 @@ function TokenGenerate() {
                 contactNo: !nextAppointmentData.contactNo,
                 treatmentTypeId: !nextAppointmentData.treatmentTypeId,
                 // employeeId: !appointmentData.employeeId,
-                scheduleDate: !nextAppointmentData.scheduleDate
+                scheduleDate: !nextAppointmentData.scheduleDate,
+                startTime: !appointmentData.startTime
             };
 
             setFormErrors(errors);
@@ -676,7 +681,8 @@ function TokenGenerate() {
             contactNo: !appointmentData.contactNo,
             treatmentTypeId: !appointmentData.treatmentTypeId,
             // employeeId: !appointmentData.employeeId,
-            scheduleDate: !appointmentData.scheduleDate
+            scheduleDate: !appointmentData.scheduleDate,
+            startTime: !appointmentData.startTime
         };
 
         setFormErrors(errors);
@@ -821,46 +827,8 @@ function TokenGenerate() {
                 setNotification({ message: "Selected employee is invalid.", type: 'error' });
                 return;
             }
-
-            // const safeStart = ensureTimeString(nextAppointmentData.startTime);
-            // const safeEnd = ensureTimeString(nextAppointmentData.endTime);
-        
-            // const newStart = combineDateAndTime(nextAppointmentData.scheduleDate, safeStart);
-            // const newEnd = combineDateAndTime(nextAppointmentData.scheduleDate, safeEnd);
-        
-            // const isResourceOverlap = existingAppointments.some((event, index) => {
-        
-            //     // Skip same event when editing
-            //     if (nextAppointmentData.id && event.id.toString() === nextAppointmentData.id.toString()) {
-            //         console.log("Skipping same event");
-            //         return false;
-            //     }
-        
-            //     const sameLocation = event.locationId == nextAppointmentData.locationId;
-        
-            //     if (!sameLocation) return false;
-        
-            //     const eventStart = combineDateAndTime(event.scheduleDate, event.fromTime);
-            //     const eventEnd = combineDateAndTime(event.scheduleDate, event.toTime);
-        
-            //     const isStartWithinEvent = newStart >= eventStart && newStart < eventEnd;
-            //     const isEndWithinEvent = newEnd > eventStart && newEnd <= eventEnd;
-            //     const isEventWithinNew = eventStart >= newStart && eventEnd <= newEnd;
-  
-            //     return isStartWithinEvent || isEndWithinEvent || isEventWithinNew;
-            // });
-        
-            // if (isResourceOverlap && !isConfirmed) {
-            //     setNotification({
-            //         message: `The selected room is already in use during this time slot.`,
-            //         type: "error"
-            //     });
-            //     setIsConfirmModalOpenForValidation(true);
-            //     return;
-            // }
-
             
-            const employeeSchedule = await fetchEmployeeSchedule(selectedEmployee.id, scheduleDateFormatted);
+            const employeeSchedule = await fetchEmployeeSchedule(selectedEmployee.id, nextAppointmentData.scheduleDate);
 
             if (!employeeSchedule && !isConfirmed) {
                 setNotification({ message: `The selected employee is not available on the selected date.`, type: 'error' });
@@ -1038,7 +1006,8 @@ function TokenGenerate() {
             customerName: false,
             contactNo: false,
             treatmentTypeId: false,
-            scheduleDate: false
+            scheduleDate: false,
+            startTime: false
         });
         setCurrentEvents([]);
         setDropEvent([]);
@@ -1256,7 +1225,37 @@ function TokenGenerate() {
                     )}
                 </div>
             </div>
-            {renderTokens()}
+            {loadingTokens ? (
+                <div
+                    className="d-flex justify-content-center align-items-center"
+                    style={{
+                    height: "250px",
+                    backgroundColor: "#f5f5f5", // light grey background
+                    borderRadius: "12px",
+                    boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+                    flexDirection: "column",
+                    gap: "10px",
+                    }}
+                >
+                    <div
+                    className="spinner-border"
+                    role="status"
+                    style={{
+                        width: "3.5rem",
+                        height: "3.5rem",
+                        color: "#28a745", // green spinner
+                        borderWidth: "5px",
+                        animation: "spin 1s linear infinite",
+                    }}
+                    ></div>
+                    <strong style={{ color: "#495057", fontSize: "18px" }}>
+                    Loading Tokens...
+                    </strong>
+                </div>
+                ) : (
+                renderTokens()
+                )}
+
 
             <Modal
                 isOpen={modalIsOpen}
@@ -1444,17 +1443,27 @@ function TokenGenerate() {
                                         <div className="col-md-6 form-group">
                                             <label htmlFor="scheduleDate">Schedule Date <span className="text-danger">*</span></label><br />
                                             <DatePicker
-                                                disabled
                                                 className={`form-control ${formErrors.scheduleDate ? 'is-invalid' : ''}`}
                                                 selected={appointmentData.scheduleDate}
                                                 dateFormat="MMMM d, yyyy"
+                                                onChange={(date) => {
+                                                    setAppointmentData({
+                                                        ...appointmentData,
+                                                        scheduleDate: date,
+                                                        startTime: null,
+                                                        endTime: null
+                                                    });
+                                                    setStartTime(null);
+                                                    setEndTime(null);
+                                                }}
+                                                disabled={appointmentData.chitNo != null}
                                             />
                                         </div>
                                         <div className="col-md-6 form-group">
                                             <label htmlFor="startTime">Start Time <span className="text-danger">*</span></label><br />
                                             <DatePicker
                                                 onChange={(date) => handleTimeChange(date, 'startTime')}
-                                                className="form-control"
+                                                className={`form-control ${formErrors.startTime ? 'is-invalid' : ''}`}
                                                 selected={startTime}
                                                 showTimeSelect
                                                 showTimeSelectOnly

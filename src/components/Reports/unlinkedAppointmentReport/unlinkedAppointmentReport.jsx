@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx'; // Import XLSX library
-import './appointmentReport.css';
+import './unlinkedAppointmentReport.css';
 import { fetchAllAppointmentsByDateRange } from '../../../services/appointmentSchedulerApi';
 
-const AppointmentReport = () => {
+const UnlinkedAppointmentReport = () => {
     const [appointments, setAppointments] = useState([]);
     const [dateFilter, setDateFilter] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
@@ -23,7 +23,10 @@ const AppointmentReport = () => {
 
             //const data = await fetchAppoitmentByDate(date);
 
-            const sortedData = data.sort((a, b) => {
+            // Filter appointments that have no next (child) appointment
+            const filteredData = data.filter(item => !item.childAppointments || item.childAppointments.length === 0);
+
+            const sortedData = filteredData.sort((a, b) => {
                 const tokenA = a.tokenNo !== null ? parseInt(a.tokenNo, 10) : Infinity;
                 const tokenB = b.tokenNo !== null ? parseInt(b.tokenNo, 10) : Infinity;
                 return tokenA - tokenB;
@@ -209,7 +212,7 @@ const AppointmentReport = () => {
 
     return (
         <div style={{ marginRight: '4%' }}>
-            <h2 className="report-heading">Appointment Report</h2>
+            <h2 className="report-heading">Appointments Missing Next Visit</h2>
 
             {/* Date Filter */}
             <div className="report-filter">
@@ -317,4 +320,4 @@ const AppointmentReport = () => {
     );
 };
 
-export default AppointmentReport;
+export default UnlinkedAppointmentReport;

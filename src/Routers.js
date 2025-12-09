@@ -24,6 +24,7 @@ import AppointmentCompletionRateReport from "./components/Reports/appointmentCom
 import AppointmentSchedulerPrimeCare from "./components/appointmentSchedulerPrimeCare/appointmentSchedulerPrimeCare";
 import TokenGenerate from "./components/tokenGenerate/TokenGenerate";
 import TokenDashboard from "./components/tokenDashboard/tokenDashboard";
+import UnlinkedAppointmentReport from "./components/Reports/unlinkedAppointmentReport/unlinkedAppointmentReport";
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -61,6 +62,7 @@ const Routers = () => {
         <Route path="/approve-shift" element={<ApproveShift />} />
         <Route path="/deleted-appointment-report" element={<DeletedAppointmentReport />} />
         <Route path="/appointment-report" element={<AppointmentReport />} />
+        <Route path="/unlinked-appointment-report" element={<UnlinkedAppointmentReport />} />
         <Route path="/staff-appointment-summary-report" element={<StaffWiseAppointmentSummaryReport />} />
         <Route path="/staff-treatment-summary-report" element={<StaffWiseTreatmentSummaryReport />} />
         <Route path="/appointment-completion-rate-report" element={<AppointmentCompletionRateReport />} />

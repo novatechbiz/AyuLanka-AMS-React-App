@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import './appointmentCompletionRateReport.css';
 import {
-    fetchAllAppointmentsByDateRange,
+    fetchAllPreScheduledScheduledAppointmentsByDateRange,
     fetchCompletedAppointmentsByDateRange
 } from '../../../services/appointmentSchedulerApi';
 
@@ -32,7 +32,7 @@ const AppointmentCompletionRateReport = () => {
             const end = new Date(endDate);
             const dateList = generateDateRange(start, end);
 
-            const allAppointments = await fetchAllAppointmentsByDateRange(start, end);
+            const allAppointments = await fetchAllPreScheduledScheduledAppointmentsByDateRange(start, end);
             const completedAppointments = await fetchCompletedAppointmentsByDateRange(start, end);
 
             // Group by scheduleDate (YYYY-MM-DD)

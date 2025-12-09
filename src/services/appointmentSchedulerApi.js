@@ -13,6 +13,26 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
+export const fetchPatientSearch = async (keyword) => {
+  try {
+    const response = await api.get(`/patients/search?keyword=${keyword}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching patients:", error);
+    throw error;
+  }
+};
+
+export const fetchPatientProfile = async (id) => {
+  try {
+    const response = await api.get(`/patients/${id}/profile`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching patients:", error);
+    throw error;
+  }
+};
+
 // Fetch Employees from the server
 export const fetchEmployees = async () => {
   try {
@@ -222,6 +242,27 @@ export const fetchAppointmentsByDateRange = async (startDate, endDate) => {
   }
 };
 
+export const fetchAllAppointmentsByDateRange = async (startDate, endDate) => {
+  console.log(startDate, ' ', endDate)
+
+  // Ensure startDate and endDate are valid Date objects
+  const start = typeof startDate === "string" ? new Date(startDate) : startDate;
+  const end = typeof endDate === "string" ? new Date(endDate) : endDate;
+
+  try {
+    const response = await axios.get(`${API_BASE_URL}/appointmentschedule/allbydaterange`, {
+      params: {
+        startDate: start.toISOString().substring(0, 10), // Format as YYYY-MM-DD
+        endDate: end.toISOString().substring(0, 10)      // Format as YYYY-MM-DD
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching appointmentschedule:", error);
+    throw error;
+  }
+};
+
 const formatDate = (date) => {
   const d = new Date(date);
   const month = `${d.getMonth() + 1}`.padStart(2, "0");
@@ -277,7 +318,7 @@ export const fetchIssuedTokens = async () => {
   }
 };
 
-export const fetchAllAppointmentsByDateRange = async (startDate, endDate) => {
+export const fetchAllPreScheduledScheduledAppointmentsByDateRange = async (startDate, endDate) => {
   console.log(startDate, ' ', endDate)
 
   // Ensure startDate and endDate are valid Date objects

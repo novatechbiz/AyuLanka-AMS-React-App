@@ -84,6 +84,25 @@
     padding-top: 0px !important;
 }
 
+@keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .spinner-border {
+    border-top-color: #28a745 !important; /* green */
+    border-right-color: #c8e6c9 !important; /* light greenish grey */
+    border-bottom-color: #dee2e6 !important; /* grey */
+    border-left-color: #28a745 !important; /* green */
+    border-style: solid;
+    border-radius: 50%;
+  }
+
+  
 /* Responsive Styles */
 @media (max-width: 768px) {
     .custom-modal-content {
