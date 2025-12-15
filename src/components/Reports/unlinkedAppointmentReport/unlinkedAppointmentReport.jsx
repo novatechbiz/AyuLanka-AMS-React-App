@@ -24,7 +24,11 @@ const UnlinkedAppointmentReport = () => {
             //const data = await fetchAppoitmentByDate(date);
 
             // Filter appointments that have no next (child) appointment
-            const filteredData = data.filter(item => !item.childAppointments || item.childAppointments.length === 0);
+            const filteredData = data.filter(
+                item =>
+                    item.chitNo != null &&
+                    (!item.childAppointments || item.childAppointments.length === 0)
+            );
 
             const sortedData = filteredData.sort((a, b) => {
                 const tokenA = a.tokenNo !== null ? parseInt(a.tokenNo, 10) : Infinity;
