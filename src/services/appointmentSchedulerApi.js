@@ -13,6 +13,23 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
+export const searchPatients = async (keyword) => {
+  const res = await api.get("/appointmentschedule/patientsearch", {
+    params: { keyword }
+  });
+  return res.data;
+};
+
+export const createCustomer = async (payload) => {
+  try {
+    const response = await api.post(`/appointmentschedule/create-customer`, payload);
+    return response.data;  // Assuming the response data contains the details of the created appointment
+  } catch (error) {
+    console.error("Error creating customer:", error);
+    throw error;  // Re-throw the error for further handling
+  }
+};
+
 export const fetchPatientSearch = async (keyword) => {
   try {
     const response = await api.get(`/patients/search?keyword=${keyword}`);

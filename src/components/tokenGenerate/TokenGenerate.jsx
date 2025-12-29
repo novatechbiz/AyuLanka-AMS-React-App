@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid';
@@ -8,14 +8,15 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './TokenGenerate.css'; // Ensure this file contains your custom styles
-import { fetchAppointmentsByDateRange,fetchEmployeeSchedule, fetchTokensByDate, deleteAppointment, fetchEmployees, fetchPrimeCareTreatmentLocations, fetchEliteCareTreatmentLocations, addAppointment, fetchTreatmentTypesByLocation } from '../../services/appointmentSchedulerApi.js';
+import { searchPatients,createCustomer, fetchAppointmentsByDateRange,fetchEmployeeSchedule, fetchTokensByDate, deleteAppointment, fetchEmployees, fetchPrimeCareTreatmentLocations, fetchEliteCareTreatmentLocations, addAppointment, fetchTreatmentTypesByLocation } from '../../services/appointmentSchedulerApi.js';
 import { ConfirmationModal } from '../confirmationModal/confirmationModal.jsx';
 import { NotificationComponent } from '../notificationComponent/notificationComponent.jsx';
 import AppointmentModalComponent from '../appointmentModalComponent/appointmentModalComponent.jsx';
 import moment from 'moment';
 import { Autocomplete, TextField } from '@mui/material';
 import { ConfirmationModalForValidation } from '../confirmationModalForValidation/confirmationModalForValidation.jsx';
-import { CheckBox } from '@mui/icons-material';
+import CreatableSelect from "react-select/creatable";
+import CreateCustomerModal from '../modalComponent/createCustomerModal.jsx';
 
 Modal.setAppElement('#root');
 
@@ -93,6 +94,15 @@ function TokenGenerate() {
     const [availableLocations, setAvailableLocations] = useState([]);
     const [loadingTokens, setLoadingTokens] = useState(false);
 
+    const [patientOptions, setPatientOptions] = useState([]);
+    const [isLoadingPatients, setIsLoadingPatients] = useState(false);
+
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [newCustomerName, setNewCustomerName] = useState("");
+    const [newCustomerPhone, setNewCustomerPhone] = useState("");
+    const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
+
+
     // Read values from env
     const rows = Number(process.env.REACT_APP_TOTAL_ROWS) || 17;
     const cols = Number(process.env.REACT_APP_TOKENS_PER_ROW) || 8;
@@ -132,6 +142,33 @@ function TokenGenerate() {
             loadAppointments();
         }
     }, [locationType]);
+
+    const handlePatientSearch = useCallback(async (inputValue) => {
+        if (inputValue.length < 3) {
+          setPatientOptions([]);
+          return;
+        }
+      
+        setIsLoadingPatients(true);
+        try {
+          const results = await searchPatients(inputValue);
+      
+          const options = results.map((p) => ({
+            value: p.id,
+            label: `${p.customerName} (${p.contactNo})`,
+            customerName: p.customerName,
+            contactNo: p.contactNo
+          }));
+      
+          setPatientOptions(options);
+        } catch (error) {
+          console.error("Patient search failed", error);
+          setPatientOptions([]);
+        } finally {
+          setIsLoadingPatients(false);
+        }
+      }, []);
+      
 
 
     // Fetch Employees and Treatment Types from API
@@ -1131,6 +1168,34 @@ function TokenGenerate() {
         // Return only available locations
         return eliteCareTreatmentLocations.filter(loc => !unavailableLocationIds.includes(loc.id));
     };
+
+    const handleCreateCustomer = async () => {
+        try {
+          setIsCreatingCustomer(true);
+      
+          const res = await createCustomer({
+            customerName: newCustomerName,
+            phone: newCustomerPhone,
+          });
+      
+          // bind created customer to appointment
+          setAppointmentData(prev => ({
+            ...prev,
+            customerName: res.data.result.customerName,
+            contactNo: res.data.result.phone,
+          }));
+      
+          // close modal & reset
+          setShowCreateModal(false);
+          setNewCustomerPhone("");
+        } catch (error) {
+          alert("Customer creation failed");
+          console.error(error);
+        } finally {
+          setIsCreatingCustomer(false);
+        }
+      };
+      
     
 
     return (
@@ -1389,18 +1454,84 @@ function TokenGenerate() {
                             <form onSubmit={handleSubmit} className="modal-appoinment-body modal-body custom-modal-body">
                                 <div className="container-fluid">
                                     <div className="row">
-                                        <div className="col-md-6 form-group">
-                                            <label htmlFor="customerName">Customer Name <span className="text-danger">*</span></label>
-                                            <input
-                                                className={`form-control ${formErrors.customerName ? 'is-invalid' : ''}`}
-                                                type="text"
-                                                id="customerName"
-                                                name="customerName"
-                                                value={appointmentData.customerName}
-                                                onChange={handleInputChange} 
-                                                required
+                                    <div className="col-md-6 form-group">
+                                        <label>
+                                            Customer Name <span className="text-danger">*</span>
+                                        </label>
+
+                                        {/* <Select
+                                            placeholder="Search customer by name or phone..."
+                                            isClearable
+                                            isLoading={isLoadingPatients}
+                                            options={patientOptions}
+                                            onInputChange={(value) => {
+                                                handlePatientSearch(value);
+                                                return value;
+                                              }}
+                                            onChange={(selected) => {
+                                            if (!selected) {
+                                                setAppointmentData(prev => ({
+                                                ...prev,
+                                                customerName: "",
+                                                contactNo: ""
+                                                }));
+                                                return;
+                                            }
+
+                                            setAppointmentData(prev => ({
+                                                ...prev,
+                                                customerName: selected.customerName,
+                                                contactNo: selected.contactNo
+                                            }));
+                                            }}
+                                            classNamePrefix="react-select"
+                                        /> */}
+
+                                            <CreatableSelect
+                                            placeholder="Search or create customer..."
+                                            isClearable
+                                            isLoading={isLoadingPatients}
+                                            options={patientOptions}
+                                            onInputChange={(value) => {
+                                                handlePatientSearch(value);
+                                                return value;
+                                            }}
+                                            formatCreateLabel={(input) => `➕ Create customer "${input}"`}
+                                            onChange={(selected) => {
+                                                if (!selected) {
+                                                setAppointmentData(prev => ({
+                                                    ...prev,
+                                                    customerName: "",
+                                                    contactNo: ""
+                                                }));
+                                                return;
+                                                }
+
+                                                // NEW CUSTOMER → open modal
+                                                if (selected.__isNew__) {
+                                                setNewCustomerName(selected.label);
+                                                setNewCustomerPhone("");
+                                                setShowCreateModal(true);
+                                                return;
+                                                }
+
+                                                // EXISTING CUSTOMER
+                                                setAppointmentData(prev => ({
+                                                ...prev,
+                                                customerName: selected.customerName,
+                                                contactNo: selected.contactNo
+                                                }));
+                                            }}
+                                            classNamePrefix="react-select"
                                             />
+
+                                            {formErrors.customerName && (
+                                                <div className="text-danger small">
+                                                {formErrors.customerName}
+                                                </div>
+                                            )}
                                         </div>
+
                                         <div className="col-md-6 form-group">
                                             <label htmlFor="contactNo">Contact Number <span className="text-danger">*</span></label>
                                             <input className={`form-control ${formErrors.contactNo ? 'is-invalid' : ''}`} type="text" id="contactNo" name="contactNo" value={appointmentData.contactNo} onChange={handleInputChange} required />
@@ -1780,6 +1911,18 @@ function TokenGenerate() {
                     </div>
                 </div>
             </Modal>
+            
+
+            <CreateCustomerModal
+                show={showCreateModal}
+                customerName={newCustomerName}
+                phone={newCustomerPhone}
+                setPhone={setNewCustomerPhone}
+                loading={isCreatingCustomer}
+                onClose={() => setShowCreateModal(false)}
+                onCreate={handleCreateCustomer}
+            />
+
 
 
             <ConfirmationModal
