@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid';
@@ -8,14 +8,15 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './TokenGenerate.css'; // Ensure this file contains your custom styles
-import { fetchAppointmentsByDateRange,fetchEmployeeSchedule, fetchTokensByDate, deleteAppointment, fetchEmployees, fetchPrimeCareTreatmentLocations, fetchEliteCareTreatmentLocations, addAppointment, fetchTreatmentTypesByLocation } from '../../services/appointmentSchedulerApi.js';
+import { searchPatients,createCustomer, fetchAppointmentsByDateRange,fetchEmployeeSchedule, fetchTokensByDate, deleteAppointment, fetchEmployees, fetchPrimeCareTreatmentLocations, fetchEliteCareTreatmentLocations, addAppointment, fetchTreatmentTypesByLocation } from '../../services/appointmentSchedulerApi.js';
 import { ConfirmationModal } from '../confirmationModal/confirmationModal.jsx';
 import { NotificationComponent } from '../notificationComponent/notificationComponent.jsx';
 import AppointmentModalComponent from '../appointmentModalComponent/appointmentModalComponent.jsx';
 import moment from 'moment';
 import { Autocomplete, TextField } from '@mui/material';
 import { ConfirmationModalForValidation } from '../confirmationModalForValidation/confirmationModalForValidation.jsx';
-import { CheckBox } from '@mui/icons-material';
+import CreatableSelect from "react-select/creatable";
+import CreateCustomerModal from '../modalComponent/createCustomerModal.jsx';
 
 Modal.setAppElement('#root');
 
@@ -34,6 +35,7 @@ function TokenGenerate() {
         secondaryEmployeeId: '',
         doctorEmployeeId: '',
         customerName: '',
+        customerId: '',
         contactNo: '',
         tokenNo: '',
         tokenIssueTime: new Date(),
@@ -80,6 +82,7 @@ function TokenGenerate() {
     const [isNextAppointmentModalOpen, setIsNextAppointmentModalOpen] = useState(false);
     const [nextAppointmentData, setNextAppointmentData] = useState({
         customerName: "",
+        customerId: "",
         contactNo: "",
         locationType: "1",
         locationId: "",
@@ -92,6 +95,18 @@ function TokenGenerate() {
     });
     const [availableLocations, setAvailableLocations] = useState([]);
     const [loadingTokens, setLoadingTokens] = useState(false);
+
+    const [patientOptions, setPatientOptions] = useState([]);
+    const [isLoadingPatients, setIsLoadingPatients] = useState(false);
+
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [newCustomerName, setNewCustomerName] = useState("");
+    const [newCustomerPhone, setNewCustomerPhone] = useState("");
+    const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
+    const [backendErrors, setBackendErrors] = useState({});
+    const [nextAppBackendErrors, setNextAppBackendErrors] = useState({});
+
+
 
     // Read values from env
     const rows = Number(process.env.REACT_APP_TOTAL_ROWS) || 17;
@@ -132,6 +147,33 @@ function TokenGenerate() {
             loadAppointments();
         }
     }, [locationType]);
+
+    const handlePatientSearch = useCallback(async (inputValue) => {
+        if (inputValue.length < 3) {
+          setPatientOptions([]);
+          return;
+        }
+      
+        setIsLoadingPatients(true);
+        try {
+          const results = await searchPatients(inputValue);
+      
+          const options = results.map((p) => ({
+            value: p.customerId,
+            label: `${p.customerName} (${p.contactNo})`,
+            customerName: p.customerName,
+            contactNo: p.contactNo
+          }));
+      
+          setPatientOptions(options);
+        } catch (error) {
+          console.error("Patient search failed", error);
+          setPatientOptions([]);
+        } finally {
+          setIsLoadingPatients(false);
+        }
+      }, []);
+      
 
 
     // Fetch Employees and Treatment Types from API
@@ -416,6 +458,7 @@ function TokenGenerate() {
                 id: existing.id,
                 scheduleDate: new Date(existing.scheduleDate),
                 customerName: existing.customerName || '',
+                customerId: existing.customerId || '',
                 contactNo: existing.contactNo || '',
                 tokenNo: tokenNumber,
                 chitNo: existing.chitNo,
@@ -670,6 +713,7 @@ function TokenGenerate() {
 
     const handleSubmit = async (event, isTokenIssue = false, isMainLocationChanged = false) => {
         console.log('handleSubmit appointmentData', appointmentData)
+        setBackendErrors({});
         setIsClickedHandleSubmit(true)
         if (event) event.preventDefault();
 
@@ -723,6 +767,7 @@ function TokenGenerate() {
             Id: appointmentData.id != 0 ? appointmentData.id : 0,
             ScheduleDate: formatDateOnly(appointmentData.scheduleDate),
             CustomerName: appointmentData.customerName,
+            CustomerId: appointmentData.customerId,
             ContactNo: appointmentData.contactNo,
             EmployeeId: appointmentData.employeeId != "" ? appointmentData.employeeId : null,
             SecondaryEmployeeId: appointmentData.secondaryEmployeeId != "" ? appointmentData.secondaryEmployeeId : null,
@@ -758,11 +803,29 @@ function TokenGenerate() {
             setShowModal(true);
         } catch (error) {
             console.error('Failed to create appointment:', error);
-            if (appointmentData.id != 0 && appointmentData.id != undefined) {
-                setModalContent({ type: 'error', message: 'Failed to update appointment' });
-            } else {
-                setModalContent({ type: 'error', message: 'Failed to create appointment' });
+        
+            // 🔹 Backend validation error (400)
+            if (error.response?.status == 400 && error.response.data) {
+                const { message, field } = error.response.data;
+        
+                if (field) {
+                    setBackendErrors({ [field]: message });
+                    return; // stop further handling
+                }
+        
+                setModalContent({ type: 'error', message });
+                setShowModal(true);
+                return;
             }
+        
+            // 🔹 Fallback error
+            setModalContent({
+                type: 'error',
+                message:
+                    appointmentData.id
+                        ? 'Failed to update appointment'
+                        : 'Failed to create appointment'
+            });
             setShowModal(true);
             return;
         }
@@ -782,6 +845,7 @@ function TokenGenerate() {
             treatmentTypeId,
             locationType,
             customerName,
+            customerId,
             contactNo
           } = nextAppointmentData;
         
@@ -791,11 +855,14 @@ function TokenGenerate() {
             !treatmentTypeId.length ||
             !locationType ||
             !customerName ||
+            !customerId ||
             !contactNo
           ) {
             alert("Please fill all required fields.");
             return;
           }
+
+        setNextAppBackendErrors({});
           
         const userId = sessionStorage.getItem('userId');
     
@@ -921,6 +988,7 @@ function TokenGenerate() {
             Id: 0,
             ScheduleDate: formatDateOnly(nextAppointmentData.scheduleDate),
             CustomerName: nextAppointmentData.customerName,
+            CustomerId: nextAppointmentData.customerId,
             ContactNo: nextAppointmentData.contactNo,
             FromTime: formatTimeForCSharp(nextAppointmentData.startTime),
             ToTime: formatTimeForCSharp(nextAppointmentData.endTime),
@@ -943,9 +1011,32 @@ function TokenGenerate() {
             setIsNextAppointmentModalOpen(false);
             refreshAppointments();
         } catch (error) {
-            console.error('Failed to create next appointment:', error);
-            setModalContent({ type: 'error', message: 'Failed to create next appointment' });
+            console.error('Failed to create appointment:', error);
+        
+            // 🔹 Backend validation error (400)
+            if (error.response?.status == 400 && error.response.data) {
+                const { message, field } = error.response.data;
+        
+                if (field) {
+                    setNextAppBackendErrors({ [field]: message });
+                    return; // stop further handling
+                }
+        
+                setModalContent({ type: 'error', message });
+                setShowModal(true);
+                return;
+            }
+        
+            // 🔹 Fallback error
+            setModalContent({
+                type: 'error',
+                message:
+                    nextAppointmentData.id
+                        ? 'Failed to update appointment'
+                        : 'Failed to create appointment'
+            });
             setShowModal(true);
+            return;
         }
     };    
 
@@ -990,6 +1081,7 @@ function TokenGenerate() {
             secondaryEmployeeId: '',
             doctorEmployeeId: '',
             customerName: '',
+            customerId: '',
             contactNo: '',
             tokenNo: '',
             tokenIssueTime: new Date(),
@@ -1031,8 +1123,13 @@ function TokenGenerate() {
     const handleDelete = async () => {
         try {
             console.log('appointment dataaaaaaaaa', appointmentData);
+
+            if(appointmentData.remarks == "") {
+                alert("Please enter remark before delete");
+                return;
+            }
             const userId = sessionStorage.getItem('userId');
-            await deleteAppointment(selectedEventId, userId, appointmentData.remarks != "" ? appointmentData.remarks : "delete token");
+            await deleteAppointment(selectedEventId, userId, appointmentData.remarks);
             const updatedEvents = currentEvents.filter(event => event.id !== selectedEventId);
             setCurrentEvents(updatedEvents);
             setSelectedEventId(null);
@@ -1079,6 +1176,7 @@ function TokenGenerate() {
         setNextAppointmentData({
             ...nextAppointmentData,
             customerName: appointmentData.customerName,
+            customerId: appointmentData.customerId,
             contactNo: appointmentData.contactNo
         });
         setIsNextAppointmentModalOpen(true);
@@ -1131,6 +1229,35 @@ function TokenGenerate() {
         // Return only available locations
         return eliteCareTreatmentLocations.filter(loc => !unavailableLocationIds.includes(loc.id));
     };
+
+    const handleCreateCustomer = async () => {
+        try {
+          setIsCreatingCustomer(true);
+      
+          const res = await createCustomer({
+            customerName: newCustomerName,
+            phone: newCustomerPhone,
+          });
+      
+          // bind created customer to appointment
+          setAppointmentData(prev => ({
+            ...prev,
+            customerId: res.data.result.customerId,
+            customerName: res.data.result.customerName,
+            contactNo: res.data.result.phone,
+          }));
+      
+          // close modal & reset
+          setShowCreateModal(false);
+          setNewCustomerPhone("");
+        } catch (error) {
+          alert("Customer creation failed");
+          console.error(error);
+        } finally {
+          setIsCreatingCustomer(false);
+        }
+      };
+      
     
 
     return (
@@ -1273,7 +1400,7 @@ function TokenGenerate() {
                                     <div className="col-4">
                                         <h5 className="modal-title-appointment custom-modal-title-appointment">Create Appointment</h5>
                                     </div>
-                                    <div className="col-2">
+                                    <div className="col-6">
                                         <input className="form-control"
                                             type="text"
                                             id="tokenNo"
@@ -1281,8 +1408,14 @@ function TokenGenerate() {
                                             style={{ textAlign: 'center', fontSize: '20px', fontWeight: 'bold', backgroundColor: '#ffc107' }}
                                             value={appointmentData.tokenNo}
                                             onChange={handleTokenNumberChange} />
+                                            
+                                            {backendErrors.tokenNo && (
+                                                <div style={{color:'red', fontSize: '14px'}}>
+                                                    {backendErrors.tokenNo}
+                                                </div>
+                                            )}
                                     </div>
-                                    <div className="col-6" style={{ textAlign: 'right' }}>
+                                    <div className="col-2" style={{ textAlign: 'right' }}>
                                         <button type="button" className="close custom-close" style={{ width: '50px' }} onClick={closeModalAndReset}>
                                             <span>&times;</span>
                                         </button>
@@ -1347,6 +1480,7 @@ function TokenGenerate() {
                                                         ...appointmentData,
                                                         id: appt.id,
                                                         customerName: appt.customerName,
+                                                        customerId: appt.customerId,
                                                         contactNo: appt.contactNo,
                                                         scheduleDate: new Date(appt.scheduleDate),
                                                         startTime: startTime,
@@ -1389,18 +1523,65 @@ function TokenGenerate() {
                             <form onSubmit={handleSubmit} className="modal-appoinment-body modal-body custom-modal-body">
                                 <div className="container-fluid">
                                     <div className="row">
-                                        <div className="col-md-6 form-group">
-                                            <label htmlFor="customerName">Customer Name <span className="text-danger">*</span></label>
-                                            <input
-                                                className={`form-control ${formErrors.customerName ? 'is-invalid' : ''}`}
-                                                type="text"
-                                                id="customerName"
-                                                name="customerName"
-                                                value={appointmentData.customerName}
-                                                onChange={handleInputChange} 
-                                                required
+                                    <div className="col-md-6 form-group">
+                                        <label>
+                                            Customer Name <span className="text-danger">*</span>
+                                        </label>
+                                            <CreatableSelect
+                                                placeholder="Search or create customer..."
+                                                isClearable
+                                                isLoading={isLoadingPatients}
+                                                options={patientOptions}
+                                                value={
+                                                    appointmentData.customerId
+                                                      ? {
+                                                          value: appointmentData.customerId,
+                                                          label: `${appointmentData.customerName}`
+                                                        }
+                                                      : null
+                                                  }
+                                                onInputChange={(value) => {
+                                                    handlePatientSearch(value);
+                                                    return value;
+                                                }}
+                                                formatCreateLabel={(input) => `➕ Create customer "${input}"`}
+                                                onChange={(selected) => {
+                                                    if (!selected) {
+                                                    setAppointmentData(prev => ({
+                                                        ...prev,
+                                                        customerName: "",
+                                                        customerId: "",
+                                                        contactNo: ""
+                                                    }));
+                                                    return;
+                                                    }
+
+                                                    // NEW CUSTOMER → open modal
+                                                    if (selected.__isNew__) {
+                                                    setNewCustomerName(selected.label);
+                                                    setNewCustomerPhone("");
+                                                    setShowCreateModal(true);
+                                                    return;
+                                                    }
+
+                                                    // EXISTING CUSTOMER
+                                                    setAppointmentData(prev => ({
+                                                    ...prev,
+                                                    customerName: selected.customerName,
+                                                    customerId: selected.customerId,
+                                                    contactNo: selected.contactNo
+                                                    }));
+                                                }}
+                                                classNamePrefix="react-select"
                                             />
+
+                                            {formErrors.customerName && (
+                                                <div className="text-danger small">
+                                                {formErrors.customerName}
+                                                </div>
+                                            )}
                                         </div>
+
                                         <div className="col-md-6 form-group">
                                             <label htmlFor="contactNo">Contact Number <span className="text-danger">*</span></label>
                                             <input className={`form-control ${formErrors.contactNo ? 'is-invalid' : ''}`} type="text" id="contactNo" name="contactNo" value={appointmentData.contactNo} onChange={handleInputChange} required />
@@ -1473,6 +1654,20 @@ function TokenGenerate() {
                                             />
                                         </div>
                                     </div>
+                                    <div className="row">
+                                        <div className="col-md-12 form-group">
+                                            <label htmlFor="remarks">Remarks</label>
+                                            <textarea
+                                                className="form-control"
+                                                id="remarks"
+                                                name="remarks"
+                                                value={appointmentData.remarks}
+                                                onChange={handleInputChange}
+                                                rows="2"  // Number of visible rows in textarea
+                                                placeholder="Enter any remarks or additional information"
+                                            />
+                                        </div>
+                                    </div>
                                     <br/>
                                     <div className="row">
                                         <div className="col-md-3 form-group">
@@ -1494,7 +1689,8 @@ function TokenGenerate() {
                                                     }
                                             />
                                         </div>
-                                    </div><br/>
+                                    </div>
+                                    <br/>
                                     <div className="custom-modal-footer row">
                                         <div className="col-6 p-2">
                                             <button
@@ -1594,7 +1790,13 @@ function TokenGenerate() {
                                 </button>
                             </div>
                         </div>
-
+                        <div className="row">
+                            {nextAppBackendErrors.tokenNo && (
+                                <div style={{color:'red', fontSize: '14px'}}>
+                                    {nextAppBackendErrors.tokenNo}
+                                </div>
+                            )}
+                        </div>
                         <div className="modal-body custom-modal-body">
                             <div className="row">
                                 <div className="col-md-6 form-group">
@@ -1780,6 +1982,18 @@ function TokenGenerate() {
                     </div>
                 </div>
             </Modal>
+            
+
+            <CreateCustomerModal
+                show={showCreateModal}
+                customerName={newCustomerName}
+                phone={newCustomerPhone}
+                setPhone={setNewCustomerPhone}
+                loading={isCreatingCustomer}
+                onClose={() => setShowCreateModal(false)}
+                onCreate={handleCreateCustomer}
+            />
+
 
 
             <ConfirmationModal
