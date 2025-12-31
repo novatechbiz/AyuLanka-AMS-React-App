@@ -159,12 +159,13 @@ function TokenGenerate() {
           const results = await searchPatients(inputValue);
       
           const options = results.map((p) => ({
-            value: p.customerId,
+            value: p.id,
             label: `${p.customerName} (${p.contactNo})`,
             customerName: p.customerName,
+            customerId: p.id,
             contactNo: p.contactNo
           }));
-      
+          console.log('optionssssss', options)
           setPatientOptions(options);
         } catch (error) {
           console.error("Patient search failed", error);
@@ -1547,6 +1548,7 @@ function TokenGenerate() {
                                                 formatCreateLabel={(input) => `➕ Create customer "${input}"`}
                                                 onChange={(selected) => {
                                                     if (!selected) {
+                                                    console.log("selectedddddddd", selected)
                                                     setAppointmentData(prev => ({
                                                         ...prev,
                                                         customerName: "",
@@ -1987,12 +1989,14 @@ function TokenGenerate() {
             <CreateCustomerModal
                 show={showCreateModal}
                 customerName={newCustomerName}
+                setCustomerName={setNewCustomerName}
                 phone={newCustomerPhone}
                 setPhone={setNewCustomerPhone}
                 loading={isCreatingCustomer}
                 onClose={() => setShowCreateModal(false)}
                 onCreate={handleCreateCustomer}
             />
+
 
 
 
