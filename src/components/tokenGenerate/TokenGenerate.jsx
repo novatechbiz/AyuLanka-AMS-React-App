@@ -720,15 +720,16 @@ function TokenGenerate() {
 
         setNotification({ message: '', type: '' });
 
-        // Check required fields and set errors
+        const isValidContactNo = (value) => /^(0\d{9}|\d{9})$/.test(value);
+
         const errors = {
-            customerName: !appointmentData.customerName,
-            contactNo: !appointmentData.contactNo,
-            treatmentTypeId: !appointmentData.treatmentTypeId,
-            // employeeId: !appointmentData.employeeId,
-            scheduleDate: !appointmentData.scheduleDate,
-            startTime: !appointmentData.startTime
+        customerName: !appointmentData.customerName,
+        contactNo: !appointmentData.contactNo || !isValidContactNo(appointmentData.contactNo),
+        treatmentTypeId: !appointmentData.treatmentTypeId || appointmentData.treatmentTypeId.length === 0,
+        scheduleDate: !appointmentData.scheduleDate,
+        startTime: !appointmentData.startTime
         };
+
 
         setFormErrors(errors);
 
@@ -1587,6 +1588,12 @@ function TokenGenerate() {
                                         <div className="col-md-6 form-group">
                                             <label htmlFor="contactNo">Contact Number <span className="text-danger">*</span></label>
                                             <input className={`form-control ${formErrors.contactNo ? 'is-invalid' : ''}`} type="text" id="contactNo" name="contactNo" value={appointmentData.contactNo} onChange={handleInputChange} required />
+                                            {formErrors.contactNo && (
+                                                <div className="text-danger small">
+                                                    Contact number is not valid
+                                                </div>
+                                            )}
+
                                         </div>
                                     </div>
                                     <div className="row">
@@ -1641,6 +1648,12 @@ function TokenGenerate() {
                                                 }}
                                                 disabled={appointmentData.chitNo != null}
                                             />
+                                            {formErrors.scheduleDate && (
+                                                <div className="text-danger small">
+                                                    Schedule Date is invalid
+                                                </div>
+                                            )}
+
                                         </div>
                                         <div className="col-md-6 form-group">
                                             <label htmlFor="startTime">Start Time <span className="text-danger">*</span></label><br />
@@ -1654,6 +1667,11 @@ function TokenGenerate() {
                                                 timeCaption="Time"
                                                 dateFormat="h:mm aa"
                                             />
+                                            {formErrors.startTime && (
+                                                <div className="text-danger small">
+                                                    Start Time is invalid
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="row">

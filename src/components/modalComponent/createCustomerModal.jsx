@@ -10,6 +10,8 @@ const CreateCustomerModal = ({
 }) => {
   if (!show) return null;
 
+  const isPhoneValid = isValidContactNo(phone);
+
   return (
     <>
       <div className="modal fade show d-block" tabIndex="-1">
@@ -39,17 +41,27 @@ const CreateCustomerModal = ({
                 />
               </div>
 
-              {/* Phone */}
+              {/* Contact Number */}
               <div className="mb-3">
                 <label className="form-label">
                   Contact Number <span className="text-danger">*</span>
                 </label>
                 <input
-                  className="form-control"
+                  className={`form-control ${
+                    phone && !isPhoneValid ? "is-invalid" : ""
+                  }`}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) =>
+                    setPhone(e.target.value.replace(/\D/g, "")) // digits only
+                  }
                   placeholder="Enter contact number"
                 />
+
+                {phone && !isPhoneValid && (
+                  <div className="invalid-feedback">
+                    Contact number must be 10 digits starting with 0 or 9 digits without 0
+                  </div>
+                )}
               </div>
             </div>
 
@@ -64,7 +76,7 @@ const CreateCustomerModal = ({
 
               <button
                 className="btn btn-success"
-                disabled={!customerName || !phone || loading}
+                disabled={!customerName || !isPhoneValid || loading}
                 onClick={onCreate}
               >
                 {loading ? "Creating..." : "Create Customer"}
@@ -80,5 +92,8 @@ const CreateCustomerModal = ({
     </>
   );
 };
+
+// helper
+const isValidContactNo = (value) => /^(0\d{9}|\d{9})$/.test(value);
 
 export default CreateCustomerModal;

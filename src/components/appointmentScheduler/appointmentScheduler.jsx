@@ -1305,7 +1305,7 @@ function AppointmentScheduler() {
                                     <div className="col-md-6 form-group">
                                         <label htmlFor="customerName">Customer Name <span className="text-danger">*</span></label>
                                         <input
-                                            disabled
+                                            disabled={!appointmentData.id}
                                             className={`form-control ${formErrors.customerName ? 'is-invalid' : ''}`}
                                             type="text"
                                             id="customerName"
@@ -1316,14 +1316,14 @@ function AppointmentScheduler() {
                                     </div>
                                     <div className="col-md-6 form-group">
                                         <label htmlFor="contactNo">Contact Number <span className="text-danger">*</span></label>
-                                        <input disabled className={`form-control ${formErrors.contactNo ? 'is-invalid' : ''}`} type="text" id="contactNo" name="contactNo" value={appointmentData.contactNo} onChange={handleInputChange} required />
+                                        <input disabled={!appointmentData.id} className={`form-control ${formErrors.contactNo ? 'is-invalid' : ''}`} type="text" id="contactNo" name="contactNo" value={appointmentData.contactNo} onChange={handleInputChange} required />
                                     </div>
                                 </div>
                                 <div className="row">
                                     <div className="col-md-12 col-sm-12 form-group">
                                         <label htmlFor="treatmentTypeId">Treatment Type(s) <span className="text-danger">*</span></label>
                                         <Autocomplete
-                                            disabled
+                                            disabled={!appointmentData.id}
                                             multiple
                                             options={treatmentTypes}
                                             getOptionLabel={(option) =>
@@ -1351,12 +1351,12 @@ function AppointmentScheduler() {
                                 <div className='row'>
                                     <div className="col-md-6 col-sm-6 form-group">
                                         <label htmlFor="scheduleDate">Schedule Date <span className="text-danger">*</span></label><br />
-                                        <DatePicker disabled className={`form-control ${formErrors.scheduleDate ? 'is-invalid' : ''}`} selected={appointmentData.scheduleDate} onChange={(date) => handleDateChange('scheduleDate', date)} dateFormat="MMMM d, yyyy" />
+                                        <DatePicker disabled={!appointmentData.id} className={`form-control ${formErrors.scheduleDate ? 'is-invalid' : ''}`} selected={appointmentData.scheduleDate} onChange={(date) => handleDateChange('scheduleDate', date)} dateFormat="MMMM d, yyyy" />
                                     </div>
                                     <div className="col-md-3 col-sm-3 form-group">
                                         <label htmlFor="startTime">Start Time <span className="text-danger">*</span></label><br />
                                         <DatePicker
-                                            disabled
+                                            disabled={!appointmentData.id}
                                             className="form-control"
                                             selected={startTime}
                                             onChange={(date) => handleTimeChange(date, 'startTime')}
@@ -1370,7 +1370,7 @@ function AppointmentScheduler() {
                                     <div className="col-md-3 col-sm-3 form-group">
                                         <label htmlFor="endTime">End Time <span className="text-danger">*</span></label><br />
                                         <DatePicker
-                                            disabled
+                                            disabled={!appointmentData.id}
                                             className="form-control"
                                             selected={endTime}
                                             onChange={(date) => handleTimeChange(date, 'endTime')}
@@ -1385,7 +1385,7 @@ function AppointmentScheduler() {
                                 <div className="row">
                                     <div className="col-md-6 form-group">
                                         <label htmlFor="employeeId">Employee</label>
-                                        <select disabled className={`form-control ${formErrors.employeeId ? 'is-invalid' : ''}`} id="employeeId" name="employeeId" value={appointmentData.employeeId} onChange={handleInputChange} required>
+                                        <select disabled={!appointmentData.id} className={`form-control ${formErrors.employeeId ? 'is-invalid' : ''}`} id="employeeId" name="employeeId" value={appointmentData.employeeId} onChange={handleInputChange} required>
                                             <option value="">Select an Employee</option>
                                             {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.employeeNumber} - {emp.callingName}</option>)}
                                         </select>
@@ -1393,7 +1393,7 @@ function AppointmentScheduler() {
                                     <div className="col-md-3 col-sm-3 form-group">
                                         <label htmlFor="actualStartTime">Actual Start Time</label><br />
                                         <DatePicker
-                                            disabled
+                                            disabled={!appointmentData.id}
                                             className="form-control"
                                             selected={actualStartTime}
                                             onChange={(date) => handleActualTimeChange(date, 'actualStartTime')}
@@ -1407,7 +1407,7 @@ function AppointmentScheduler() {
                                     <div className="col-md-3 col-sm-3 form-group">
                                         <label htmlFor="actualEndTime">Actual End Time</label><br />
                                         <DatePicker
-                                            disabled
+                                            disabled={!appointmentData.id}
                                             className="form-control"
                                             selected={actualEndTime}
                                             onChange={(date) => handleActualTimeChange(date, 'actualEndTime')}
@@ -1422,7 +1422,7 @@ function AppointmentScheduler() {
                                 <div className="row">
                                     <div className="col-md-6 form-group">
                                         <label htmlFor="secondaryEmployeeId">Secondary Employee</label>
-                                        <select disabled className={`form-control ${formErrors.secondaryEmployeeId ? 'is-invalid' : ''}`} id="secondaryEmployeeId" name="secondaryEmployeeId" value={appointmentData.secondaryEmployeeId} onChange={handleInputChange}>
+                                        <select disabled={!appointmentData.id} className={`form-control ${formErrors.secondaryEmployeeId ? 'is-invalid' : ''}`} id="secondaryEmployeeId" name="secondaryEmployeeId" value={appointmentData.secondaryEmployeeId} onChange={handleInputChange}>
                                             <option value="">Select an Employee</option>
                                             {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.employeeNumber} - {emp.callingName}</option>)}
                                         </select>
@@ -1430,7 +1430,7 @@ function AppointmentScheduler() {
                                     <div className="col-md-3 col-sm-3 form-group">
                                         <label htmlFor="actualSecondStartTime">Actual Start Time</label><br />
                                         <DatePicker
-                                            disabled
+                                            disabled={!appointmentData.id}
                                             className="form-control"
                                             selected={actualSecondStartTime}
                                             onChange={(date) => handleActualSecondTimeChange(date, 'actualSecondStartTime')}
@@ -1444,7 +1444,7 @@ function AppointmentScheduler() {
                                     <div className="col-md-3 col-sm-3 form-group">
                                         <label htmlFor="actualSecondEndTime">Actual End Time</label><br />
                                         <DatePicker
-                                            disabled
+                                            disabled={!appointmentData.id}
                                             className="form-control"
                                             selected={actualSecondEndTime}
                                             onChange={(date) => handleActualSecondTimeChange(date, 'actualSecondEndTime')}
@@ -1459,14 +1459,14 @@ function AppointmentScheduler() {
                                 <div className="row">
                                     <div className="col-md-6 form-group">
                                         <label htmlFor="doctorEmployeeId">Doctor</label>
-                                        <select disabled className={`form-control ${formErrors.doctorEmployeeId ? 'is-invalid' : ''}`} id="doctorEmployeeId" name="doctorEmployeeId" value={appointmentData.doctorEmployeeId} onChange={handleInputChange}>
+                                        <select disabled={!appointmentData.id} className={`form-control ${formErrors.doctorEmployeeId ? 'is-invalid' : ''}`} id="doctorEmployeeId" name="doctorEmployeeId" value={appointmentData.doctorEmployeeId} onChange={handleInputChange}>
                                             <option value="">Select a Doctor</option>
                                             {doctors.map(emp => <option key={emp.id} value={emp.id}>{emp.employeeNumber} - {emp.callingName}</option>)}
                                         </select>
                                     </div>
                                     <div className="col-md-6 form-group">
                                         <label htmlFor="tokenNo">Token Number</label>
-                                        <input disabled className="form-control" type="text" id="tokenNo" name="tokenNo" value={appointmentData.tokenNo} onChange={handleInputChange} />
+                                        <input disabled={!appointmentData.id} className="form-control" type="text" id="tokenNo" name="tokenNo" value={appointmentData.tokenNo} onChange={handleInputChange} />
                                     </div>
 
                                 </div>
