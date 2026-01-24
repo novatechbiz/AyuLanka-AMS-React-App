@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button } from 'react-bootstrap';
+import FullCalendar from '@fullcalendar/react';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
 import Modal from 'react-modal';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -14,7 +17,8 @@ import { Autocomplete, TextField } from '@mui/material';
 import { ConfirmationModalForValidation } from '../confirmationModalForValidation/confirmationModalForValidation.jsx';
 import CreatableSelect from "react-select/creatable";
 import CreateCustomerModal from '../modalComponent/createCustomerModal.jsx';
-import CustomerProfilePage from '../customerProfile/customerProfile.jsx';
+
+Modal.setAppElement('#root');
 
 function TokenGenerate() {
     const [currentEvents, setCurrentEvents] = useState([]);
@@ -102,12 +106,11 @@ function TokenGenerate() {
     const [backendErrors, setBackendErrors] = useState({});
     const [nextAppBackendErrors, setNextAppBackendErrors] = useState({});
 
-    const [showProfile, setShowProfile] = useState(false);
-    const [selectedCustomerId, setSelectedCustomerId] = useState(null);
+
 
     // Read values from env
     const rows = Number(process.env.REACT_APP_TOTAL_ROWS) || 17;
-    const cols = Number(process.env.REACT_APP_TOKENS_PER_ROW) || 10;
+    const cols = Number(process.env.REACT_APP_TOKENS_PER_ROW) || 8;
     const startHour = Number(process.env.REACT_APP_APPOINTMENT_START_HOUR) || 7; // 7 AM
     const totalTokens = rows * cols;
 
@@ -144,12 +147,6 @@ function TokenGenerate() {
             loadAppointments();
         }
     }, [locationType]);
-
-    const openProfile = (id) => {
-        console.log('dddddddddddddddddd', id)
-        setSelectedCustomerId(id);
-        setShowProfile(true);
-    };
 
     const handlePatientSearch = useCallback(async (inputValue) => {
         if (inputValue.length < 3) {
@@ -1428,11 +1425,6 @@ function TokenGenerate() {
                                 </div>
                             </div>
                         </div>
-                        <div className='row'>
-                            <div className='col-md-6 form-group'>
-                                <Button onClick={() => openProfile(appointmentData.customerId)}>View Customer Profile</Button>
-                            </div>
-                        </div>
                         <div className="row">
                             <div className="col-md-6 form-group">
                                 <label htmlFor="locationType">Location Type <span className="text-danger">*</span></label>
@@ -2011,23 +2003,6 @@ function TokenGenerate() {
                 </div>
             </Modal>
             
-            <Modal
-                show={showProfile}
-                onHide={() => setShowProfile(false)}
-                size="xl"
-                centered
-            >
-                <Modal.Header closeButton>
-                <Modal.Title>Customer Profile</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                <CustomerProfilePage
-                    customerId={selectedCustomerId}
-                    show={showProfile}
-                    onClose={() => setShowProfile(false)}
-                />
-                </Modal.Body>
-            </Modal>
 
             <CreateCustomerModal
                 show={showCreateModal}
