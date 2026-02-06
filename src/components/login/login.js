@@ -16,6 +16,7 @@ class login extends React.Component {
       errorMessageToast: "",
       successMessageToast: "",
       redirectToMain: false, // Flag to trigger the redirection
+      isExecutiveDashboard: false,
       loading: false, // Flag to indicate loading state
     };
   }
@@ -57,7 +58,8 @@ class login extends React.Component {
               showSuccessToast: true,
               successMessageToast: "Login successful!",
               redirectToMain: true,
-              loading: false,
+              isExecutiveDashboard: decoded.designationCode == "SAD" ? true : false,
+              loading: false, 
             });
           } else {
             throw new Error("Necessary user details not found in token");

@@ -21,8 +21,13 @@ function template() {
         type="success"
         message={this.state.successMessageToast}
       />
-      {/* Redirect to the /dashboard route */}
-      {this.state.redirectToMain && <Navigate to="/dashboard" replace={true} />}
+      {this.state.redirectToMain ? (
+          this.state.isExecutiveDashboard ? (
+              <Navigate to="/dashboard" replace={true} />
+          ) : (
+              <Navigate to="/home" replace={true} />
+          )
+      ) : null}
       <div className="container container-main">
         <div className="row">
           <div className="col-lg-8">
