@@ -25,6 +25,9 @@ import AppointmentSchedulerPrimeCare from "./components/appointmentSchedulerPrim
 import TokenGenerate from "./components/tokenGenerate/TokenGenerate";
 import TokenDashboard from "./components/tokenDashboard/tokenDashboard";
 import UnlinkedAppointmentReport from "./components/Reports/unlinkedAppointmentReport/unlinkedAppointmentReport";
+import Dashboard from "./components/dashboard/dashboardCharts";
+import { Home } from "@mui/icons-material";
+import CustomerProfile from "./components/customerProfile/customerProfile";
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -45,7 +48,10 @@ const Routers = () => {
     <Layout>
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/home" element={<Home />} />
         <Route path="/user" element={<User />} />
+        <Route path="/customer-profile" element={<CustomerProfile />} />
         <Route path="/apply-leave" element={<ApplyLeave />} />
         <Route path="/attendance-upload" element={<ManageAttendance />} />
         <Route path="/employee-roster" element={<EmployeeRoster />} />

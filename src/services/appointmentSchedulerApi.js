@@ -225,7 +225,7 @@ export const fetchDeletedAppoitmentByDate = async (startDate, endDate) => {
   const start = typeof startDate === "string" ? new Date(startDate) : startDate;
   const end = typeof endDate === "string" ? new Date(endDate) : endDate;
   try {
-    const response = await axios.get(`${API_BASE_URL}/appointmentschedule/DeletedAppointmentsByDateRange`, {
+    const response = await api.get(`/appointmentschedule/DeletedAppointmentsByDateRange`, {
       params: {
         startDate: start.toISOString().substring(0, 10), // Format as YYYY-MM-DD
         endDate: end.toISOString().substring(0, 10)      // Format as YYYY-MM-DD
@@ -246,7 +246,7 @@ export const fetchAppointmentsByDateRange = async (startDate, endDate) => {
   const end = typeof endDate === "string" ? new Date(endDate) : endDate;
 
   try {
-    const response = await axios.get(`${API_BASE_URL}/appointmentschedule/bydaterange`, {
+    const response = await api.get(`/appointmentschedule/bydaterange`, {
       params: {
         startDate: start.toISOString().substring(0, 10), // Format as YYYY-MM-DD
         endDate: end.toISOString().substring(0, 10)      // Format as YYYY-MM-DD
@@ -267,7 +267,7 @@ export const fetchAllAppointmentsByDateRange = async (startDate, endDate) => {
   const end = typeof endDate === "string" ? new Date(endDate) : endDate;
 
   try {
-    const response = await axios.get(`${API_BASE_URL}/appointmentschedule/allbydaterange`, {
+    const response = await api.get(`/appointmentschedule/allbydaterange`, {
       params: {
         startDate: start.toISOString().substring(0, 10), // Format as YYYY-MM-DD
         endDate: end.toISOString().substring(0, 10)      // Format as YYYY-MM-DD
@@ -277,6 +277,80 @@ export const fetchAllAppointmentsByDateRange = async (startDate, endDate) => {
   } catch (error) {
     console.error("Error fetching appointmentschedule:", error);
     throw error;
+  }
+};
+
+export const fetchAllDashboardChartsDatabyDateRange = async (startDate, endDate) => {
+  console.log(startDate, ' ', endDate)
+
+  // Ensure startDate and endDate are valid Date objects
+  const start = typeof startDate === "string" ? new Date(startDate) : startDate;
+  const end = typeof endDate === "string" ? new Date(endDate) : endDate;
+
+  try {
+    const response = await api.get(`/appointmentschedule/dashboardchartsdatabydaterange`, {
+      params: {
+        startDate: start.toISOString().substring(0, 10), // Format as YYYY-MM-DD
+        endDate: end.toISOString().substring(0, 10)      // Format as YYYY-MM-DD
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching appointmentschedule:", error);
+    throw error;
+  }
+};
+
+export const fetchDashboardSummaryByDateRange = async (startDate, endDate, category) => {
+  console.log(startDate, ' ', endDate, ' ', category)
+  const start = typeof startDate === "string" ? new Date(startDate) : startDate;
+  const end = typeof endDate === "string" ? new Date(endDate) : endDate;
+
+  try {
+    const response = await api.get(`/appointmentschedule/dashboardSummaryByDateRange`, {
+      params: {
+        startDate: start.toISOString().substring(0, 10), 
+        endDate: end.toISOString().substring(0, 10), 
+        category     // Format as YYYY-MM-DD
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching DashboardSummaryByDate:", error);
+    throw error;
+  }
+};
+
+export const fetchDashboardDetailsByDate = async (date, category, type) => {
+  console.log(date, ' ', category, ' ', type)
+  const formattedDate =
+  typeof date === "string"
+    ? date
+    : date.toISOString().substring(0, 10);
+
+  try {
+    const response = await api.get(`/appointmentschedule/dashboarddetailsbydate`, {
+      params: {
+        date: formattedDate, category, type
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching dashboarddetailsbydate:", error);
+    throw error;
+  }
+};
+
+export const fetchCustomerProfile = async (id) => {
+  try {
+    const response = await api.get(
+      `/appointmentschedule/customerprofile`,
+      { params: { customerId: id } }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching customer profile:", error);
   }
 };
 
@@ -296,7 +370,7 @@ export const fetchPrimeCareAppointmentsByDateRange = async (startDate, endDate) 
   const end = formatDate(endDate);
 
   try {
-    const response = await axios.get(`${API_BASE_URL}/appointmentschedule/primecarebydaterange`, {
+    const response = await api.get(`/appointmentschedule/primecarebydaterange`, {
       params: { startDate: start, endDate: end }
     });
     return response.data;
@@ -313,7 +387,7 @@ export const fetchTokensByDate = async (scheduledDate) => {
   const scDate = typeof scheduledDate === "string" ? new Date(scheduledDate) : scheduledDate;
 
   try {
-    const response = await axios.get(`${API_BASE_URL}/appointmentschedule/tokensbydate`, {
+    const response = await api.get(`/appointmentschedule/tokensbydate`, {
       params: {
         date: scDate.toISOString().substring(0, 10),
       }
@@ -343,7 +417,7 @@ export const fetchAllPreScheduledScheduledAppointmentsByDateRange = async (start
   const end = typeof endDate === "string" ? new Date(endDate) : endDate;
 
   try {
-    const response = await axios.get(`${API_BASE_URL}/appointmentschedule/getAllPreScheduledScheduledAppointments`, {
+    const response = await api.get(`/appointmentschedule/getAllPreScheduledScheduledAppointments`, {
       params: {
         startDate: start.toISOString().substring(0, 10), // Format as YYYY-MM-DD
         endDate: end.toISOString().substring(0, 10)      // Format as YYYY-MM-DD
@@ -364,7 +438,7 @@ export const fetchCompletedAppointmentsByDateRange = async (startDate, endDate) 
   const end = typeof endDate === "string" ? new Date(endDate) : endDate;
 
   try {
-    const response = await axios.get(`${API_BASE_URL}/appointmentschedule/getCompletedPreScheduledScheduledAppointments`, {
+    const response = await api.get(`/appointmentschedule/getCompletedPreScheduledScheduledAppointments`, {
       params: {
         startDate: start.toISOString().substring(0, 10), // Format as YYYY-MM-DD
         endDate: end.toISOString().substring(0, 10)      // Format as YYYY-MM-DD

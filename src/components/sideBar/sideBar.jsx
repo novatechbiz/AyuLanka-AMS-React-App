@@ -125,6 +125,9 @@ const Sidebar = () => {
                   <li>
                     <Link to="/staff-treatment-summary-report">Staff Wise Treatment Summary Report</Link>
                   </li>
+                  <li>
+                    <Link to="/customer-profile">Customer Profile</Link>
+                  </li>
                 </ul>
               )}
             </li>

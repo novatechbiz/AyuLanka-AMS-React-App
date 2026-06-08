@@ -805,21 +805,23 @@ function TokenGenerate() {
             setShowModal(true);
         } catch (error) {
             console.error('Failed to create appointment:', error);
-        
+
             // 🔹 Backend validation error (400)
             if (error.response?.status == 400 && error.response.data) {
                 const { message, field } = error.response.data;
-        
+
                 if (field) {
                     setBackendErrors({ [field]: message });
+                    setIsClickedHandleSubmit(false);
                     return; // stop further handling
                 }
-        
+
                 setModalContent({ type: 'error', message });
                 setShowModal(true);
+                setIsClickedHandleSubmit(false);
                 return;
             }
-        
+
             // 🔹 Fallback error
             setModalContent({
                 type: 'error',
@@ -829,9 +831,11 @@ function TokenGenerate() {
                         : 'Failed to create appointment'
             });
             setShowModal(true);
+            setIsClickedHandleSubmit(false);
             return;
         }
 
+        setIsClickedHandleSubmit(false);
         refreshAppointments();  // Fetch appointments again or adjust state directly
         setModalIsOpen(false);
         resetAppointmentForm(); // Clear or reset the form state
@@ -1716,7 +1720,7 @@ function TokenGenerate() {
                                             <button
                                                 onClick={closeModal}
                                                 className="btn btn-danger w-100"
-                                                disabled={!appointmentData.id || appointmentData.chitNo != null}
+                                                disabled={!appointmentData.id || appointmentData.chitNo != null || isClickedHandleSubmit}
                                             >
                                                 Delete
                                             </button>
@@ -1726,6 +1730,7 @@ function TokenGenerate() {
                                             <button
                                                 onClick={(e) => handleSubmit(e, false, false)}
                                                 className="btn btn-success w-100"
+                                                disabled={isClickedHandleSubmit}
                                             >
                                                 {!appointmentData.id ? "Create" : "Update"}
                                             </button>
@@ -1742,7 +1747,7 @@ function TokenGenerate() {
                                             <button
                                                 onClick={(e) => handleSubmit(e, true, false)}
                                                 className="btn btn-secondary w-100"
-                                                disabled={!appointmentData.id || appointmentData.chitNo != null}
+                                                disabled={!appointmentData.id || appointmentData.chitNo != null || isClickedHandleSubmit}
                                             >
                                                 Issue Token
                                             </button>
